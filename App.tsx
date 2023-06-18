@@ -1,9 +1,3 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
 
 import React, { useEffect, useRef, useState } from 'react';
 import firestore from '@react-native-firebase/firestore';
@@ -14,6 +8,9 @@ StyleSheet,
   TextInput,
   View,
 } from 'react-native';
+import { Text } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native';
+
 
 interface TodoItem {
   id: string;
@@ -89,40 +86,43 @@ function App(): JSX.Element {
       setText(users.docs as TodoItem[]);
     }
     getAllTodos();
-  }, []);
+  },);
 
   return (
-   
+   <View style={styles.container}>
       <View style={styles.wrapper}>
-        
+   <Text style={{color:'white',fontSize:20,fontWeight:'700'}}>Todo List</Text>
+     
         <View style={styles.inputBox}>
           <TextInput style={styles.inputTag} ref={inputRef} keyboardType='default' placeholder='Enter note' value={data} onChangeText={(e: React.SetStateAction<string>) => setData(e)} onSubmitEditing={submit} />
           <Icon name="arrowright" size={30} color="white" onPress={(eve: any) => submit(eve)} />
         </View>
 
-        <View style={styles.listWrapper}>
-          <FlatList 
+        <KeyboardAvoidingView style={styles.listWrapper}>
+          <FlatList columnWrapperStyle={{justifyContent:'center'}}
+           numColumns={2}
             data={text}
             renderItem={({ item, index }) =>
               <View key={index} style={styles.listItem}>
                 <TextInput 
-                style={{fontSize:15,color:'black',width:80}}
+                style={{fontSize:15,color:'white',width:"100%",height:'80%',margin:0,}}
                 value={(index==editIndex && editable )?newText:item.data().text} 
                 onChangeText={(tx)=>setNewText(tx)} 
-                editable={index==editIndex} />
-              
-                <View style={{ flexDirection: 'row',gap:2 }}>
+                editable={index==editIndex}
+                multiline={true} />
+             
+                <View style={{ flexDirection: 'row',gap:2 ,justifyContent:'flex-end'}}>
                 {(index==editIndex && editable ) && 
                   <Icon name="save" size={20} color="white" onPress={() => editText(item.id)} />
                 }
-                {(index!=editIndex ) &&   <Icon name="edit" size={20} color="blue" onPress={() => readyEdit(index,item)} />}
-                  <Icon name="delete" size={20} color="red" onPress={() => remove(item.id)} />
+                {(index!=editIndex ) &&   <Icon name="edit" size={20} color="white" onPress={() => readyEdit(index,item)} />}
+                  <Icon name="delete" size={20} color="white" onPress={() => remove(item.id)} />
                 </View>
               </View>
             }
           />
+          </KeyboardAvoidingView>
           </View>
-
       </View>
      
   
@@ -133,25 +133,24 @@ function App(): JSX.Element {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'green',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#242132',
   },
   wrapper: {
-    backgroundColor: 'white',
-    
+
     height: '100%',
-    borderRadius: 10,
-    padding: 10,
+    padding: 5,
     marginTop: 10
   },
   inputBox: {
-    backgroundColor: 'pink',
+    backgroundColor: '#37324d',
     borderRadius: 10,
     padding: 5,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    
   },
   inputTag: {
     height: 50,
@@ -160,19 +159,18 @@ const styles = StyleSheet.create({
 
   },
   listWrapper: {
-    flexDirection: 'row',
-    marginTop: 10,
-    flex: 1,
+   
+    padding: 10,
   },
   listItem: {
-    height: 80,
-    width: 100,
+    height: 100,
+   width:180,
     borderRadius: 10,
-    padding: 2,
+    padding: 5,
     margin: 5,
-   
-    borderColor:'pink',
-    borderWidth:2
+  justifyContent:'space-between',
+    
+  backgroundColor:'#37324d'
  
   
   }
