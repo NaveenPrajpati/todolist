@@ -5,96 +5,145 @@
  * @format
  */
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import firestore from '@react-native-firebase/firestore';
+import Icon from 'react-native-vector-icons/AntDesign'
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
+  FlatList,
+StyleSheet,
+  TextInput,
   View,
 } from 'react-native';
 
+interface TodoItem {
+  id: string;
+  data: () => { text: string };
+}
+
 function App(): JSX.Element {
-  let [data, setData] = useState('');
-    const [text, setText] = useState([]);
-    const inputRef = useRef(null)
+  const [data, setData] = useState('');
+  const [editable, setEditable] = useState(false);
+  const [text, setText] = useState<TodoItem[]>([]);
+  const [newText, setNewText] = useState('');
+  const inputRef = useRef<TextInput>(null);
+  const [editIndex, setEditIndex] = useState<number | undefined>();
 
-    const [isConnected, setIsConnected] = useState(false);
+  function find(event: { text: string; target: { value: string } }): void {
+    event.target.value = '';
+    console.log(event.target);
+  }
 
-    function find(event) {
-      setText(pre => [...pre, event.text]);
-      event.target.value = ''
-      console.log(event.target)
-    }
+  function submit(): void {
+    firestore()
+      .collection('Todos')
+      .add({
+        text: data,
+      })
+      .then(() => {
+        console.log('Todo added!');
+        setData('');
+      });
 
-    function submit(event) {
-      console.log(data)
-      setText(pre => [...pre, data])
-      setData('')
+    if (inputRef.current) {
       inputRef.current.focus();
     }
+  }
 
-    function remove(index) {
-      const newdata = [...text]
-      newdata.splice(index, 1)
-      setText(newdata)
+  function remove(id: string): void {
+    firestore()
+      .collection('Todos')
+      .doc(id)
+      .delete()
+      .then(() => {
+        console.log('User deleted!');
+      });
+  }
+
+  function editText(id: string): void {
+    console.log(newText);
+    setEditable(false);
+    setEditIndex(undefined);
+    firestore()
+      .collection('Todos')
+      .doc(id)
+      .update({
+        text: newText,
+      })
+      .then(() => {
+        console.log('User updated!');
+      });
+  }
+
+  function readyEdit(index: number, data: TodoItem): void {
+    setEditable(true);
+    setEditIndex(index);
+    console.log(data.data().text);
+    setNewText(data.data().text);
+    console.log(data.id);
+  }
+
+  useEffect(() => {
+    async function getAllTodos() {
+      const startDate = new Date();
+      const users = await firestore().collection('Todos').get();
+      setText(users.docs as TodoItem[]);
     }
+    getAllTodos();
+  }, []);
 
-
-    // useEffect(() => {
-    //   const connectedRef = database().ref('.info/connected');
-    //   connectedRef.on('value', snapshot => {
-    //     setIsConnected(snapshot.val());
-    //   });
-    // }, []);
   return (
-    <View style={styles.container}>
-     <View style={styles.wrapper}>
-       <View style={styles.inputBox}>
-         <TextInput style={styles.inputTag} ref={inputRef} keyboardType='default' placeholder='Enter note' value={data} onChangeText={e => setData(e)} onSubmitEditing={submit} />
-         <Icon name="arrow-forward" size={30} color="white" onPress={(eve) => submit(eve)} />
-       </View>
+   
+      <View style={styles.wrapper}>
+        
+        <View style={styles.inputBox}>
+          <TextInput style={styles.inputTag} ref={inputRef} keyboardType='default' placeholder='Enter note' value={data} onChangeText={(e: React.SetStateAction<string>) => setData(e)} onSubmitEditing={submit} />
+          <Icon name="arrowright" size={30} color="white" onPress={(eve: any) => submit(eve)} />
+        </View>
 
-       <FlatList style={{marginBottom:30}}
-         data={text}
-         renderItem={({ item, index }) =>
-           <View style={styles.list}>
-             <Text style={styles.listItem}>{item}</Text>
-             <Icon name="delete-forever" size={30} color="red" onPress={() => remove(index)} />
-           </View>
-         }
-       />
+        <View style={styles.listWrapper}>
+          <FlatList 
+            data={text}
+            renderItem={({ item, index }) =>
+              <View key={index} style={styles.listItem}>
+                <TextInput 
+                style={{fontSize:15,color:'black',width:80}}
+                value={(index==editIndex && editable )?newText:item.data().text} 
+                onChangeText={(tx)=>setNewText(tx)} 
+                editable={index==editIndex} />
+              
+                <View style={{ flexDirection: 'row',gap:2 }}>
+                {(index==editIndex && editable ) && 
+                  <Icon name="save" size={20} color="white" onPress={() => editText(item.id)} />
+                }
+                {(index!=editIndex ) &&   <Icon name="edit" size={20} color="blue" onPress={() => readyEdit(index,item)} />}
+                  <Icon name="delete" size={20} color="red" onPress={() => remove(item.id)} />
+                </View>
+              </View>
+            }
+          />
+          </View>
 
-     </View>
-     <View>
-     {isConnected ? (
-       <Text>Connected to Firebase Realtime Database</Text>
-     ) : (
-       <Text>Not connected to Firebase Realtime Database</Text>
-     )}
-   </View>
-     <StatusBar animated={true} backgroundColor='pink'/>
-   </View>
+      </View>
+     
+  
+   
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    backgroundColor: 'green',
     alignItems: 'center',
     justifyContent: 'center',
   },
   wrapper: {
     backgroundColor: 'white',
-    width: '90%',
+    
     height: '100%',
     borderRadius: 10,
-    padding: 20,
-    marginTop:100
+    padding: 10,
+    marginTop: 10
   },
   inputBox: {
     backgroundColor: 'pink',
@@ -107,24 +156,25 @@ const styles = StyleSheet.create({
   inputTag: {
     height: 50,
     fontSize: 30,
-    width:'90%',
+    width: '90%',
 
   },
-  list: {
-    backgroundColor: 'lightgray',
-    minHeight:40,
-
-    borderRadius: 10,
-    padding: 5,
-    marginTop: 10,
+  listWrapper: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems:'center'
+    marginTop: 10,
+    flex: 1,
   },
-  listItem:{
-    fontSize: 25,
-    width:'90%',
-    fontWeight:400,
+  listItem: {
+    height: 80,
+    width: 100,
+    borderRadius: 10,
+    padding: 2,
+    margin: 5,
+   
+    borderColor:'pink',
+    borderWidth:2
+ 
+  
   }
 });
 
