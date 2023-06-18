@@ -1,20 +1,16 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/AntDesign'
-import {
-  FlatList,
-StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, StyleSheet, TextInput, View, TouchableOpacity } from 'react-native';
 import { Text } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native';
-
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import dayjs from 'dayjs';
+import 'dayjs/locale/en-in'
 
 interface TodoItem {
   id: string;
-  data: () => { text: string };
+  data: () => { text: string, completed: boolean, dueDate: Date };
 }
 
 function App(): JSX.Element {
@@ -22,12 +18,16 @@ function App(): JSX.Element {
   const [editable, setEditable] = useState(false);
   const [text, setText] = useState<TodoItem[]>([]);
   const [newText, setNewText] = useState('');
-  const inputRef = useRef<TextInput>(null);
   const [editIndex, setEditIndex] = useState<number | undefined>();
+  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
-  function find(event: { text: string; target: { value: string } }): void {
-    event.target.value = '';
-    console.log(event.target);
+  const inputRef = useRef<TextInput>(null);
+
+
+  function formatDateTime(dateTime: string): string {
+    const formattedDateTime = dayjs(dateTime).format('DD MM YYYY');
+    return formattedDateTime;
   }
 
   function submit(): void {
@@ -35,10 +35,13 @@ function App(): JSX.Element {
       .collection('Todos')
       .add({
         text: data,
+        completed: false,
+        
       })
       .then(() => {
         console.log('Todo added!');
         setData('');
+        setDueDate(undefined);
       });
 
     if (inputRef.current) {
@@ -52,14 +55,14 @@ function App(): JSX.Element {
       .doc(id)
       .delete()
       .then(() => {
-        console.log('User deleted!');
+        console.log('Todo deleted!');
       });
   }
 
   function editText(id: string): void {
-    console.log(newText);
     setEditable(false);
     setEditIndex(undefined);
+
     firestore()
       .collection('Todos')
       .doc(id)
@@ -67,66 +70,144 @@ function App(): JSX.Element {
         text: newText,
       })
       .then(() => {
-        console.log('User updated!');
+        console.log('Todo updated!');
       });
+  }
+
+  function updateDate(id: string,data:Date){
+    firestore()
+    .collection('Todos')
+    .doc(id)
+    .update({
+      dueDate: data,
+    })
+    .then(() => {
+      console.log('Todo completion status updated!');
+    });
   }
 
   function readyEdit(index: number, data: TodoItem): void {
     setEditable(true);
     setEditIndex(index);
-    console.log(data.data().text);
     setNewText(data.data().text);
-    console.log(data.id);
+  }
+
+  function toggleCompletion(id: string, completed: boolean): void {
+    firestore()
+      .collection('Todos')
+      .doc(id)
+      .update({
+        completed: !completed,
+      })
+      .then(() => {
+        console.log('Todo completion status updated!');
+      });
   }
 
   useEffect(() => {
     async function getAllTodos() {
-      const startDate = new Date();
+ 
       const users = await firestore().collection('Todos').get();
+      // console.log(users.data().dueDate)
       setText(users.docs as TodoItem[]);
     }
     getAllTodos();
-  },);
+  },[text,editable]);
+
+  const renderTodoItem = ({ item, index }: { item: TodoItem; index: number }) => {
+    const isEditing = index === editIndex && editable;
+
+    const toggleDateTimePicker = () => {
+      setShowDateTimePicker(!showDateTimePicker);
+    };
+
+    const handleConfirm = (id: string,selectedDate: Date) => {
+      console.log(id)
+     
+      updateDate(id,selectedDate)
+      setDueDate(selectedDate);
+      setShowDateTimePicker(false);
+    };
+
+    return (
+      <View key={index} style={styles.listItem}>
+<View style={{flexDirection:'row'}}>
+<TextInput
+          style={[styles.todoText, isEditing && styles.editingText]}
+          value={isEditing ? newText : item.data().text}
+          onChangeText={(text) => setNewText(text)}
+          editable={isEditing}
+          multiline
+        />
+
+         <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => toggleCompletion(item.id, item.data().completed)}>
+          <Icon
+            name={item.data().completed ? 'checkcircle' : 'checkcircleo'}
+            size={20}
+            color={item.data().completed ? 'green' : 'white'}
+          />
+        </TouchableOpacity>
+</View>
+       
+     <View style={{flexDirection:'row',justifyContent:'flex-end'}}>
+     {!isEditing &&  <TouchableOpacity style={styles.editIconContainer} onPress={() => readyEdit(index, item)}>
+          <Icon name="edit" size={20} color="gray" />
+        </TouchableOpacity>}
+        <TouchableOpacity style={styles.deleteIconContainer} onPress={() => remove(item.id)}>
+          <Icon name="delete" size={20} color="red" />
+        </TouchableOpacity>
+        {isEditing && (
+          <TouchableOpacity style={styles.saveIconContainer} onPress={() => editText(item.id)}>
+            <Icon name="save" size={20} color="blue" />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
+          <Icon name="calendar" size={20} color="skyblue" />
+        </TouchableOpacity>
+        {/* {item.data().dueDate && (
+          <Text style={styles.dueDateText}>{formatDateTime(new Date(item.data().dueDate))}</Text>
+        )} */}
+        <DateTimePickerModal
+          isVisible={showDateTimePicker}
+          mode="datetime"
+          onConfirm={(selectedate)=>handleConfirm(item.id,selectedate)}
+          onCancel={toggleDateTimePicker}
+        />
+        </View>
+      </View>
+    );
+  };
 
   return (
-   <View style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.wrapper}>
-   <Text style={{color:'white',fontSize:20,fontWeight:'700'}}>Todo List</Text>
-     
+        <Text style={{ color: 'white', fontSize: 20, fontWeight: '700' }}>Todo List</Text>
+
         <View style={styles.inputBox}>
-          <TextInput style={styles.inputTag} ref={inputRef} keyboardType='default' placeholder='Enter note' value={data} onChangeText={(e: React.SetStateAction<string>) => setData(e)} onSubmitEditing={submit} />
-          <Icon name="arrowright" size={30} color="white" onPress={(eve: any) => submit(eve)} />
+          <TextInput
+            style={styles.inputTag}
+            ref={inputRef}
+            keyboardType="default"
+            placeholder="Enter note"
+            value={data}
+            onChangeText={(e: React.SetStateAction<string>) => setData(e)}
+            onSubmitEditing={submit}
+          />
+          <Icon name="arrowright" size={30} color="white" onPress={() => submit()} />
         </View>
 
         <KeyboardAvoidingView style={styles.listWrapper}>
-          <FlatList columnWrapperStyle={{justifyContent:'center'}}
-           numColumns={2}
+          <FlatList
+            numColumns={2}
             data={text}
-            renderItem={({ item, index }) =>
-              <View key={index} style={styles.listItem}>
-                <TextInput 
-                style={{fontSize:15,color:'white',width:"100%",height:'80%',margin:0,}}
-                value={(index==editIndex && editable )?newText:item.data().text} 
-                onChangeText={(tx)=>setNewText(tx)} 
-                editable={index==editIndex}
-                multiline={true} />
-             
-                <View style={{ flexDirection: 'row',gap:2 ,justifyContent:'flex-end'}}>
-                {(index==editIndex && editable ) && 
-                  <Icon name="save" size={20} color="white" onPress={() => editText(item.id)} />
-                }
-                {(index!=editIndex ) &&   <Icon name="edit" size={20} color="white" onPress={() => readyEdit(index,item)} />}
-                  <Icon name="delete" size={20} color="white" onPress={() => remove(item.id)} />
-                </View>
-              </View>
-            }
+            renderItem={renderTodoItem}
+            keyExtractor={(item) => item.id}
           />
-          </KeyboardAvoidingView>
-          </View>
+        </KeyboardAvoidingView>
       </View>
-     
-  
-   
+    </View>
   );
 }
 
@@ -138,10 +219,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#242132',
   },
   wrapper: {
-
     height: '100%',
     padding: 5,
-    marginTop: 10
+    marginTop: 10,
   },
   inputBox: {
     backgroundColor: '#37324d',
@@ -150,30 +230,56 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    
   },
   inputTag: {
     height: 50,
     fontSize: 30,
     width: '90%',
-
   },
   listWrapper: {
-   
     padding: 10,
   },
   listItem: {
-    height: 100,
-   width:180,
+    height: 150,
+    width: 180,
     borderRadius: 10,
     padding: 5,
     margin: 5,
-  justifyContent:'space-between',
-    
-  backgroundColor:'#37324d'
- 
-  
-  }
+    justifyContent: 'space-between',
+    backgroundColor: '#37324d',
+
+  },
+  checkboxContainer: {
+    marginHorizontal: 5,
+  },
+  todoText: {
+    fontSize: 15,
+    color: 'white',
+    width:'80%'
+  },
+  editingText: {
+    borderWidth: 1,
+    borderColor: 'blue',
+    borderRadius: 5,
+    paddingHorizontal: 1,
+  },
+  editIconContainer: {
+    marginHorizontal: 5,
+  },
+  deleteIconContainer: {
+    marginHorizontal: 5,
+  },
+  saveIconContainer: {
+    marginHorizontal: 5,
+  },
+  calendarIconContainer: {
+    marginHorizontal: 5,
+  },
+  dueDateText: {
+    color: 'white',
+    fontSize: 12,
+    fontStyle: 'italic',
+  },
 });
 
 export default App;
