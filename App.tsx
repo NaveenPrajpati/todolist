@@ -7,10 +7,12 @@ import { KeyboardAvoidingView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 import moment from 'moment'
+import DeviceInfo from 'react-native-device-info';
 
 interface TodoItem {
   id: string;
   data: () => { text: string, completed: boolean, dueDate: Date };
+  deviceId: string; // device identification
 }
 
 function App(): JSX.Element {
@@ -21,17 +23,32 @@ function App(): JSX.Element {
   const [editIndex, setEditIndex] = useState<number | undefined>();
   const [showDateTimePicker, setShowDateTimePicker] = useState(false);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
-
+const  textRef=useRef<TextInput>(null)
   const inputRef = useRef<TextInput>(null);
+  const deviceIdentifier = DeviceInfo.getUniqueId();
 
+  // function formatDateTime(dateTime: { seconds: string }): string {
+  //   const date = moment(dateTime.seconds).format('MM D, YYYY');
+  //   return date;
+  // }
 
-  function formatDateTime(dateTime: { seconds: string }): string {
+  async function getAllTodos() {
+    const todosSnapshot = await firestore()
+    .collection('Todos')
+    .where('deviceId', '==', deviceIdentifier) // Filter by device identifier
+    .get();
 
-
-    const date = moment(dateTime.seconds).format('MM D, YYYY');
-
-    return date;
+  setText(todosSnapshot.docs as TodoItem[]);
   }
+
+
+  useEffect(() => {
+    
+    getAllTodos();
+    console.log('fet')
+  }, [editable]);
+
+
 
   function submit(): void {
     firestore()
@@ -39,12 +56,15 @@ function App(): JSX.Element {
       .add({
         text: data,
         completed: false,
-        dueDate: ''
+        dueDate: '',
+        deviceId: deviceIdentifier,
       })
       .then(() => {
         console.log('Todo added!');
         setData('');
         setDueDate(undefined);
+      getAllTodos();
+
       });
 
     if (inputRef.current) {
@@ -59,6 +79,8 @@ function App(): JSX.Element {
       .delete()
       .then(() => {
         console.log('Todo deleted!');
+    getAllTodos();
+
       });
   }
 
@@ -94,6 +116,7 @@ function App(): JSX.Element {
     setEditable(true);
     setEditIndex(index);
     setNewText(data.data().text);
+    textRef.current?.focus()
   }
 
   function toggleCompletion(id: string, completed: boolean): void {
@@ -108,16 +131,10 @@ function App(): JSX.Element {
       });
   }
 
-  useEffect(() => {
-    async function getAllTodos() {
 
-      const users = await firestore().collection('Todos').get();
-      //  console.log(users.docs[0]._data.dueDate)
-      setText(users.docs as TodoItem[]);
-    }
-    getAllTodos();
-  }, [text, editable]);
+ 
 
+  //render todos items 
   const renderTodoItem = ({ item, index }: { item: TodoItem; index: number }) => {
     const isEditing = index === editIndex && editable;
 
@@ -133,6 +150,9 @@ function App(): JSX.Element {
       setShowDateTimePicker(false);
     };
 
+
+    
+
     return (
       <View key={index} style={styles.listItem}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -142,6 +162,7 @@ function App(): JSX.Element {
             onChangeText={(text) => setNewText(text)}
             editable={isEditing}
             multiline
+           ref={isEditing?textRef:null}
           />
 
           <TouchableOpacity
@@ -170,7 +191,7 @@ function App(): JSX.Element {
               <Icon name="save" size={20} color="blue" />
             </TouchableOpacity>
           )}
-          <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
+          {/* <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
             <Icon name="calendar" size={20} color="skyblue" />
           </TouchableOpacity>
           
@@ -179,7 +200,7 @@ function App(): JSX.Element {
             mode="datetime"
             onConfirm={(selectedate) => handleConfirm(item.id, selectedate)}
             onCancel={toggleDateTimePicker}
-          />
+          /> */}
         </View>
       </View>
     );
@@ -198,6 +219,7 @@ function App(): JSX.Element {
             value={data}
             onChangeText={(e: React.SetStateAction<string>) => setData(e)}
             onSubmitEditing={submit}
+            underlineColorAndroid='transparent'
           />
           <Icon name="arrowright" size={30} color="white" onPress={() => submit()} />
         </View>
@@ -247,25 +269,27 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     fontSize: 30,
     width: '90%',
-
+    color:'white',
+    
   },
   listWrapper: {
     flex: 1,
     marginTop: 5,
-
+    alignItems: 'center',
 
   },
   fList: {
     alignItems: 'center',
-
+backgroundColor:'cyan',
     marginBottom: 5,
-    paddingBottom: 10
+    paddingBottom: 10,
   },
   listItem: {
-    width: 180,
+    width: '45%',
     borderRadius: 10,
     padding: 5,
     margin: 5,
+    display:'flex',
     justifyContent: 'space-between',
     backgroundColor: '#37324d',
 
@@ -280,10 +304,8 @@ const styles = StyleSheet.create({
 
   },
   editingText: {
-    borderWidth: 1,
-    borderColor: 'skyblue',
-    borderRadius: 2,
     paddingHorizontal: 1,
+  
   },
   editIconContainer: {
     marginHorizontal: 5,
