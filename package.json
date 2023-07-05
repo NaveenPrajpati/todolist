@@ -10,9 +10,11 @@
     "test": "jest"
   },
   "dependencies": {
+    "@notifee/react-native": "^7.8.0",
     "@react-native-community/datetimepicker": "^7.1.0",
-    "@react-native-firebase/app": "^18.0.0",
-    "@react-native-firebase/firestore": "^18.0.0",
+    "@react-native-firebase/app": "^18.1.0",
+    "@react-native-firebase/firestore": "^18.1.0",
+    "@react-native-firebase/messaging": "^18.1.0",
     "moment": "^2.29.4",
     "react": "18.2.0",
     "react-native": "0.71.11",

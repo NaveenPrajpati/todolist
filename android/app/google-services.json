@@ -7,12 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:699363296269:android:4cfbe92ab5c6a739134144",
+        "mobilesdk_app_id": "1:699363296269:android:91e112efb0d1e625134144",
         "android_client_info": {
           "package_name": "com.todolistsolidauto"
         }
       },
       "oauth_client": [
+        {
+          "client_id": "699363296269-sl6sh1022lm6dhsqig11rsaereomtp93.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.todolistsolidauto",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
         {
           "client_id": "699363296269-o00jp9ge8ajae5qspvlvul4kg9l3apda.apps.googleusercontent.com",
           "client_type": 3
