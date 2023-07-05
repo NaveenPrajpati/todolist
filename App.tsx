@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/AntDesign'
-import { FlatList, StyleSheet, TextInput, View, TouchableOpacity } from 'react-native';
+import { FlatList, StyleSheet, TextInput, View, TouchableOpacity, Modal, Alert, Pressable, Image, ActivityIndicator, ToastAndroid } from 'react-native';
 import { Text } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -10,8 +10,11 @@ import moment from 'moment'
 import DeviceInfo from 'react-native-device-info';
 
 interface TodoItem {
+  createdAt: ReactNode;
+  completed: any;
+  text: ReactNode;
   id: string;
-  data: () => { text: string, completed: boolean, dueDate: Date };
+  data: () => { text: string, completed: boolean, dueDate: Date,createdAT:Date };
   deviceId: string; // device identification
 }
 
@@ -26,6 +29,8 @@ function App(): JSX.Element {
 const  textRef=useRef<TextInput>(null)
   const inputRef = useRef<TextInput>(null);
   const deviceIdentifier = DeviceInfo.getUniqueId();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false)
 
   // function formatDateTime(dateTime: { seconds: string }): string {
   //   const date = moment(dateTime.seconds).format('MM D, YYYY');
@@ -35,35 +40,51 @@ const  textRef=useRef<TextInput>(null)
   async function getAllTodos() {
     const todosSnapshot = await firestore()
     .collection('Todos')
-    .where('deviceId', '==', deviceIdentifier) // Filter by device identifier
+    .where('deviceId', '==', deviceIdentifier._j) // Filter by device identifier
     .get();
 
-  setText(todosSnapshot.docs as TodoItem[]);
+    const nit= todosSnapshot.docs.map(it=>{
+      const data = it.data();
+      const id = it.id;
+      return { id, ...data };
+    })
+
+    console.log(nit)
+    console.log(typeof(nit.createdAT))
+  setText(nit);
   }
 
 
   useEffect(() => {
     
     getAllTodos();
-    console.log('fet')
-  }, [editable]);
+
+  }, [loading]);
 
 
 
-  function submit(): void {
+  function addData(): void {
+
+    setLoading(true)
+    if(data==''){
+    setLoading(false)
+      return
+    }
     firestore()
       .collection('Todos')
       .add({
         text: data,
         completed: false,
         dueDate: '',
-        deviceId: deviceIdentifier,
+        deviceId: deviceIdentifier._j,
+        createdAt:Date.now()
       })
       .then(() => {
-        console.log('Todo added!');
+        setLoading(false)
+        setModalVisible(!modalVisible)
+        ToastAndroid.show('Todo added!',ToastAndroid.BOTTOM);
         setData('');
         setDueDate(undefined);
-      getAllTodos();
 
       });
 
@@ -73,14 +94,14 @@ const  textRef=useRef<TextInput>(null)
   }
 
   function remove(id: string): void {
+    setLoading(true)
     firestore()
       .collection('Todos')
       .doc(id)
       .delete()
       .then(() => {
-        console.log('Todo deleted!');
-    getAllTodos();
-
+        setLoading(false)
+        ToastAndroid.show('Todo deleted!',ToastAndroid.BOTTOM);
       });
   }
 
@@ -132,24 +153,24 @@ const  textRef=useRef<TextInput>(null)
   }
 
 
- 
+  const isEditing =  editable;
+
+  const toggleDateTimePicker = () => {
+    setShowDateTimePicker(!showDateTimePicker);
+  };
+
+  const handleConfirm = (id: string, selectedDate: Date) => {
+    console.log(selectedDate)
+
+    updateDate(id, selectedDate)
+
+    setShowDateTimePicker(false);
+  };
+
 
   //render todos items 
   const renderTodoItem = ({ item, index }: { item: TodoItem; index: number }) => {
-    const isEditing = index === editIndex && editable;
-
-    const toggleDateTimePicker = () => {
-      setShowDateTimePicker(!showDateTimePicker);
-    };
-
-    const handleConfirm = (id: string, selectedDate: Date) => {
-      console.log(selectedDate)
-
-      updateDate(id, selectedDate)
-
-      setShowDateTimePicker(false);
-    };
-
+    
 
     
 
@@ -165,52 +186,21 @@ const  textRef=useRef<TextInput>(null)
            ref={isEditing?textRef:null}
           />
 
-          <TouchableOpacity
-            style={styles.checkboxContainer}
-            onPress={() => toggleCompletion(item.id, item.data().completed)}>
-            <Icon
-              name={item.data().completed ? 'checkcircle' : 'checkcircleo'}
-              size={20}
-              color={item.data().completed ? 'green' : 'white'}
-            />
-          </TouchableOpacity>
+          
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        {/* {item.data().dueDate && (
-            <Text style={styles.dueDateText}>{formatDateTime(item.data().dueDate)}</Text>
-          )} */}
-          {!isEditing && <TouchableOpacity style={styles.editIconContainer} onPress={() => readyEdit(index, item)}>
-            <Icon name="edit" size={20} color="gray" />
-          </TouchableOpacity>}
-          <TouchableOpacity style={styles.deleteIconContainer} onPress={() => remove(item.id)}>
-            <Icon name="delete" size={20} color="red" />
-          </TouchableOpacity>
-          {isEditing && (
-            <TouchableOpacity style={styles.saveIconContainer} onPress={() => editText(item.id)}>
-              <Icon name="save" size={20} color="blue" />
-            </TouchableOpacity>
-          )}
-          {/* <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
-            <Icon name="calendar" size={20} color="skyblue" />
-          </TouchableOpacity>
-          
-          <DateTimePickerModal
-            isVisible={showDateTimePicker}
-            mode="datetime"
-            onConfirm={(selectedate) => handleConfirm(item.id, selectedate)}
-            onCancel={toggleDateTimePicker}
-          /> */}
+   
         </View>
       </View>
     );
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.wrapper}>
-        <Text style={{ color: 'white', fontSize: 20, fontWeight: '700' }}>Todo List</Text>
-        <View style={styles.inputBox}>
+ 
+      <View style={{position:'relative',flex:1,backgroundColor:'#EFEFEF'}}>
+        <Text style={{textAlign:'center',padding:8,backgroundColor:'red',color:'white',fontWeight:'700'}}>Todo List</Text>
+        {/* <View style={styles.inputBox}>
           <TextInput
             style={styles.inputTag}
             ref={inputRef}
@@ -222,23 +212,91 @@ const  textRef=useRef<TextInput>(null)
             underlineColorAndroid='transparent'
           />
           <Icon name="arrowright" size={30} color="white" onPress={() => submit()} />
-        </View>
+        </View> */}
 
-        <KeyboardAvoidingView style={styles.listWrapper} behavior='height'>
 
           <FlatList
-            contentContainerStyle={styles.fList}
-            numColumns={2}
+            contentContainerStyle={{marginHorizontal:10}}
             data={text}
-            renderItem={renderTodoItem}
-            keyExtractor={(item) => item.id}
-            keyboardShouldPersistTaps='handled'
-
+            renderItem={({item,index})=>(
+              <View style={{borderRadius:10,padding:5,backgroundColor:'white',marginVertical:5,elevation:2,marginHorizontal:3}}>
+                <View style={{borderBottomColor:'red',borderBottomWidth:1,flexDirection:'row',justifyContent:'space-between'}}>
+                  <Text style={{fontWeight:'700',color:'black'}}>{item?.createdAt}</Text>
+                  <TouchableOpacity
+            style={styles.checkboxContainer}
+            onPress={() => toggleCompletion(item.id, item.data().completed)}>
+            <Icon
+              name={item.completed ? 'checkcircle' : 'checkcircleo'}
+              size={20}
+              color={item.completed ? 'green' : 'white'}
+            />
+          </TouchableOpacity>
+                  </View>
+                <Text style={{marginTop:5}}>{item.text}</Text>
+                <View style={{borderTopColor:'red',borderTopWidth:1,flexDirection:'row',justifyContent:'space-between'}}>
+                       {/* {item.data().dueDate && (
+            <Text style={styles.dueDateText}>{formatDateTime(item.data().dueDate)}</Text>
+          )} */}
+          <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
+            <Icon name="calendar" size={20} color="skyblue" />
+          </TouchableOpacity>
+          <View style={{flexDirection:'row'}}>
+          {!isEditing && <TouchableOpacity style={styles.editIconContainer} onPress={() => readyEdit(index, item)}>
+            <Icon name="edit" size={20} color="gray" />
+          </TouchableOpacity>}
+          <TouchableOpacity style={styles.deleteIconContainer} onPress={() => remove(item.id)}>
+            <Icon name="delete" size={20} color="red" />
+          </TouchableOpacity>
+          {isEditing && (
+            <TouchableOpacity style={styles.saveIconContainer} onPress={() => editText(item.id)}>
+              <Icon name="save" size={20} color="blue" />
+            </TouchableOpacity>
+          )}
+          </View>
+          
+          <DateTimePickerModal
+            isVisible={showDateTimePicker}
+            mode="datetime"
+            onConfirm={(selectedate) => handleConfirm(item.id, selectedate)}
+            onCancel={toggleDateTimePicker}
           />
-        </KeyboardAvoidingView>
+                  </View>
+              </View>
+            )}
+          />
+           <TouchableOpacity onPress={() => setModalVisible(true)} style={{backgroundColor:'red',borderRadius:20,position:'absolute',bottom:20,right:20,padding:10,}}>
+          <Text style={{color:'white',fontWeight:'700'}}>Add</Text>
+        </TouchableOpacity>
+        
+        <Modal
+        animationType="slide"
+        visible={modalVisible}
+        onRequestClose={() => {
+          Alert.alert('Modal has been closed.');
+          setModalVisible(!modalVisible);
+        }}>
+        <View style={{backgroundColor:'#EFEFEF',flex:1}}>
+          <View style={{flexDirection:'row',alignItems:'center',padding:10,backgroundColor:'white',elevation:2}}>
+            <Pressable
+              onPress={() => setModalVisible(!modalVisible)}>
+                <Icon name="arrowright" size={30} color="black" onPress={() => setModalVisible(!modalVisible)} />            
+            </Pressable>
+            <Text style={{fontWeight:'700',marginLeft:20}}>Add Todo</Text>
+
+          </View>
+          <View style={{margin:10}}>
+            {/* <TextInput placeholder='Title' onChangeText={(text)=>setTitle(text)} style={{backgroundColor:'white',borderRadius:6,paddingVertical:3,marginVertical:5,elevation:2}}/> */}
+            <TextInput placeholder='body' multiline onChangeText={(text)=>setData(text)} style={{backgroundColor:'white',borderRadius:10,paddingVertical:20,marginVertical:5,elevation:2}}/>
+            <TouchableOpacity onPress={()=>{addData()}} style={{backgroundColor:'red',padding:8,width:'100%',borderRadius:8,marginVertical:5}}>
+              {!loading && <Text style={{color:'white',fontWeight:'700',textAlign:'center'}}>Add</Text>}
+              {loading && <ActivityIndicator color={'white'}/>}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       </View>
-    </View>
+
   );
 }
 
