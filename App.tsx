@@ -1,14 +1,13 @@
-import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import Icon from 'react-native-vector-icons/AntDesign'
 import { FlatList, StyleSheet, TextInput, View, TouchableOpacity, Modal, Alert, Pressable, Image, ActivityIndicator, ToastAndroid } from 'react-native';
 import { Text } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import messaging, { FirebaseMessagingTypes } from '@react-native-firebase/messaging';
 import notifee from '@notifee/react-native';
-import moment from 'moment'
-import DeviceInfo from 'react-native-device-info';
+import { getUniqueId, } from 'react-native-device-info';
+
 
 interface TodoItem {
   createdAt: Date;
@@ -25,13 +24,14 @@ function App(): JSX.Element {
   const [text, setText] = useState<TodoItem[]>([]);
   const [newText, setNewText] = useState('');
   const [editIndex, setEditIndex] = useState<number | undefined>();
-  const [showDateTimePicker, setShowDateTimePicker] = useState(false);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const textRef = useRef<TextInput>(null)
   const inputRef = useRef<TextInput>(null);
-  const deviceIdentifier = DeviceInfo.getUniqueId();
+  const deviceIdentifier = getUniqueId();
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false)
+  const[dueDateId,setDueDateId]=useState('')
 
   // function formatDateTime(dateTime: { seconds: string }): string {
   //   const date = moment(dateTime.seconds).format('MM D, YYYY');
@@ -63,43 +63,52 @@ function App(): JSX.Element {
     });
   }
 
-useEffect(()=>{
-  async function getDeviceToken(){
-    await messaging().registerDeviceForRemoteMessages();
-const token = await messaging().getToken();
-console.log(token)
-  }
-  getDeviceToken()
-},[])
+  useEffect(() => {
+    async function getDeviceToken() {
+      await messaging().registerDeviceForRemoteMessages();
+      const token = await messaging().getToken();
+      console.log(token)
 
-useEffect(() => {
-  const unsubscribe = messaging().onMessage(async remoteMessage => {
-    //Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
-    onDisplayNotification(remoteMessage)
-  });
 
-  return unsubscribe;
-}, []);
+    }
+    getDeviceToken()
+  }, [])
+
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      //Alert.alert('A new FCM message arrived!', JSON.stringify(remoteMessage));
+      onDisplayNotification(remoteMessage)
+    });
+
+    return unsubscribe;
+  }, []);
 
 
   async function getAllTodos() {
-    const todosSnapshot = await firestore()
-      .collection('Todos')
-      .where('deviceId', '==', deviceIdentifier._j) // Filter by device identifier
-      .get();
+    try {
+      const todosSnapshot = await firestore()
+        .collection('Todos')
+        .where('deviceId', '==', getUniqueId()._j) // Filter by device identifier
+        .get();
 
       const todosData = todosSnapshot.docs.map((doc) => {
         const data = doc.data();
         const id = doc.id;
         return { id, ...data };
       });
-    
+// console.log(todosData)
       setText(todosData);
+
+    } catch (error) {
+      console.log(error)
+    }
+
   }
 
 
   useEffect(() => {
-    getAllTodos();
+
+    getAllTodos()
 
   }, [loading]);
 
@@ -112,13 +121,14 @@ useEffect(() => {
       setLoading(false)
       return
     }
+
     firestore()
       .collection('Todos')
       .add({
         text: data,
         completed: false,
         dueDate: '',
-        deviceId: deviceIdentifier._j,
+        deviceId: getUniqueId()._j,
         createdAt: Date.now()
       })
       .then(() => {
@@ -155,7 +165,7 @@ useEffect(() => {
   }
 
   function editText(id: string): void {
-setLoading(true)
+    setLoading(true)
     firestore()
       .collection('Todos')
       .doc(id)
@@ -170,7 +180,7 @@ setLoading(true)
       });
   }
 
-  function updateDate(id: string, data: Date) {
+  function updateDate(id: string, data: number) {
     firestore()
       .collection('Todos')
       .doc(id)
@@ -179,7 +189,7 @@ setLoading(true)
       })
       .then(() => {
 
-        ToastAndroid.show('Reminder set',ToastAndroid.BOTTOM);
+        ToastAndroid.show('Reminder set', ToastAndroid.BOTTOM);
       });
   }
 
@@ -194,65 +204,76 @@ setLoading(true)
         completed: !completed,
       })
       .then(() => {
-    setLoading(false)
-        ToastAndroid.show('Todo completed',ToastAndroid.BOTTOM);
+        setLoading(false)
+        ToastAndroid.show('Todo completed', ToastAndroid.BOTTOM);
       });
   }
 
-  const toggleDateTimePicker = () => {
-    setShowDateTimePicker(!showDateTimePicker);
+  const showDatePicker = () => {
+    setDatePickerVisibility(true);
   };
 
-  const handleConfirm = (id: string, selectedDate: Date) => {
+  const hideDatePicker = () => {
+    setDatePickerVisibility(false);
+  };
+
+  const handleConfirm = (selectedDate: Date) => {
     console.log(selectedDate)
+    console.log(dueDateId)
+    console.log(selectedDate.getTime())
 
-    updateDate(id, selectedDate)
+    updateDate(dueDateId, selectedDate.getTime())
 
-    setShowDateTimePicker(false);
+    hideDatePicker();
   };
+
+
 
 
 
   return (
 
-    <View style={{ position: 'relative', flex: 1, backgroundColor: '#EFEFEF' }}>
-      <View style={{ padding: 8, backgroundColor: 'red' }}>
-      {!loading && <Text style={{ textAlign: 'center', color: 'white', fontWeight: '700' }}>Todo List</Text>}
+    <View style={{ position: 'relative', flex: 1, backgroundColor: '#f2f6fe' }}>
+      <View style={{ padding: 8, backgroundColor: '#6200ee' }}>
+        {!loading && <Text style={{ textAlign: 'center', color: 'white', fontWeight: '700' }}>Todo List</Text>}
         {loading && <ActivityIndicator color={'white'} />}
       </View>
       <FlatList
-        contentContainerStyle={{ marginHorizontal: 10 }}
+        contentContainerStyle={{ marginHorizontal: 10 }}      
         data={text}
         renderItem={({ item, index }) => (
           <View style={{ borderRadius: 10, padding: 5, backgroundColor: 'white', marginVertical: 5, elevation: 2, marginHorizontal: 3 }}>
-            <View style={{ borderBottomColor: 'red', borderBottomWidth: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Text style={{ fontWeight: '700', color: 'black' }}>{item?.createdAt}</Text>
+            <View style={{  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text style={{ fontWeight: '700',fontSize:11, color: '#4809a5',backgroundColor:'#d8ccea',borderRadius:15,paddingHorizontal:10,paddingVertical:2 }}>{new Date(item?.createdAt).toLocaleString()}</Text>
               <TouchableOpacity
                 style={styles.checkboxContainer}
                 onPress={() => toggleCompletion(item.id, item.completed)}>
                 <Icon
                   name={item.completed ? 'checkcircle' : 'checkcircleo'}
                   size={15}
-                  color={item.completed ? 'green' : 'gray'}
+                  color={item.completed ? 'green' : 'indigo'}
                 />
               </TouchableOpacity>
             </View>
             <TextInput
-              style={{ color: 'black' }}
+              style={{ color: 'gray',fontWeight:'bold',fontSize:20 }}
               value={(editable && index == editIndex) ? newText : item.text}
               onChangeText={(text) => setNewText(text)}
               editable={editable}
               multiline
               ref={editable ? textRef : null}
             />
-            <View style={{ borderTopColor: 'red', borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-              {/* {item.data().dueDate && (
-            <Text style={styles.dueDateText}>{formatDateTime(item.data().dueDate)}</Text>
-          )} */}
-              <TouchableOpacity style={styles.calendarIconContainer} onPress={toggleDateTimePicker}>
-                <Icon name="calendar" size={20} color="skyblue" />
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+          
+              <TouchableOpacity style={styles.calendarIconContainer} onPress={()=>{
+                setDueDateId(item.id)
+                showDatePicker()
+                }}>
+                  
+                 { item?.dueDate &&   <Text style={{ fontWeight: '700',fontSize:12, color: 'red',backgroundColor:'#efbabf',borderRadius:15,paddingHorizontal:10,paddingVertical:2 }}>{item?.dueDate?new Date(item?.dueDate).toLocaleString():''}</Text>}
+                <Icon name="clockcircleo" size={20} color="blue" style={{fontWeight:'500',}}/>
               </TouchableOpacity>
-              <View style={{ flexDirection: 'row' }}>
+              <View style={{ flexDirection: 'row',gap:10 }}>
                 {!editable && <TouchableOpacity style={styles.editIconContainer} onPress={() => readyEdit(index, item)}>
                   <Icon name="edit" size={20} color="gray" />
                 </TouchableOpacity>}
@@ -267,16 +288,19 @@ setLoading(true)
               </View>
 
               <DateTimePickerModal
-                isVisible={showDateTimePicker}
+                isVisible={isDatePickerVisible}
                 mode="datetime"
-                onConfirm={(selectedate) => handleConfirm(item.id, selectedate)}
-                onCancel={toggleDateTimePicker}
+                onConfirm={
+                  handleConfirm
+                 }
+                onCancel={hideDatePicker}
+                
               />
             </View>
           </View>
         )}
       />
-      <TouchableOpacity onPress={() => setModalVisible(true)} style={{ backgroundColor: 'red', borderRadius: 20, position: 'absolute', bottom: 20, right: 20, padding: 10, }}>
+      <TouchableOpacity onPress={() => setModalVisible(true)} style={{ backgroundColor: '#6200ee', borderRadius: 20, position: 'absolute', bottom: 20, right: 20, padding: 10, }}>
         <Text style={{ color: 'white', fontWeight: '700' }}>Add</Text>
       </TouchableOpacity>
 
@@ -288,18 +312,18 @@ setLoading(true)
           setModalVisible(!modalVisible);
         }}>
         <View style={{ backgroundColor: '#EFEFEF', flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: 'white', elevation: 2 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 10, backgroundColor: '#6200ee', elevation: 2 }}>
             <Pressable
               onPress={() => setModalVisible(!modalVisible)}>
-              <Icon name="arrowright" size={30} color="black" onPress={() => setModalVisible(!modalVisible)} />
+              <Icon name="arrowleft" size={30} color="white" onPress={() => setModalVisible(!modalVisible)} />
             </Pressable>
-            <Text style={{ fontWeight: '700', marginLeft: 20 }}>Add Todo</Text>
+            <Text style={{ fontWeight: '700', marginLeft: 20,fontSize:20,color:'white' }}>Add Todo</Text>
 
           </View>
           <View style={{ margin: 10 }}>
             {/* <TextInput placeholder='Title' onChangeText={(text)=>setTitle(text)} style={{backgroundColor:'white',borderRadius:6,paddingVertical:3,marginVertical:5,elevation:2}}/> */}
-            <TextInput placeholder='body' multiline onChangeText={(text) => setData(text)} style={{ backgroundColor: 'white', borderRadius: 10, paddingVertical: 20, marginVertical: 5, elevation: 2 }} />
-            <TouchableOpacity onPress={() => { addData() }} style={{ backgroundColor: 'red', padding: 8, width: '100%', borderRadius: 8, marginVertical: 5 }}>
+            <TextInput placeholder='Add your content' multiline onChangeText={(text) => setData(text)} style={{ backgroundColor: 'white', borderRadius: 10,fontSize:20, paddingVertical: 20, marginVertical: 5, elevation: 2 }} />
+            <TouchableOpacity onPress={() => { addData() }} style={{ backgroundColor: 'purple', padding: 8, width: '100%', borderRadius: 8, marginVertical: 5 }}>
               {!loading && <Text style={{ color: 'white', fontWeight: '700', textAlign: 'center' }}>Add</Text>}
               {loading && <ActivityIndicator color={'white'} />}
             </TouchableOpacity>
@@ -378,16 +402,17 @@ const styles = StyleSheet.create({
 
   },
   editIconContainer: {
-    marginHorizontal: 5,
+   
   },
   deleteIconContainer: {
-    marginHorizontal: 5,
+    
   },
   saveIconContainer: {
-    marginHorizontal: 5,
+    
   },
   calendarIconContainer: {
-    marginHorizontal: 5,
+  
+    flexDirection:'row'
   },
   dueDateText: {
     color: 'white',
@@ -397,7 +422,5 @@ const styles = StyleSheet.create({
 });
 
 export default App;
-function componentDidMount() {
-  throw new Error('Function not implemented.');
-}
+
 
