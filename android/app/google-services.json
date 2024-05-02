@@ -1,44 +1,26 @@
 {
   "project_info": {
-    "project_number": "699363296269",
-    "project_id": "todolist-991cc",
-    "storage_bucket": "todolist-991cc.appspot.com"
+    "project_number": "498754343121",
+    "project_id": "todolist-15daa",
+    "storage_bucket": "todolist-15daa.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:699363296269:android:91e112efb0d1e625134144",
+        "mobilesdk_app_id": "1:498754343121:android:fce7983f641217818135f0",
         "android_client_info": {
-          "package_name": "com.todolistsolidauto"
+          "package_name": "com.todolist"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "699363296269-sl6sh1022lm6dhsqig11rsaereomtp93.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.todolistsolidauto",
-            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
-          }
-        },
-        {
-          "client_id": "699363296269-o00jp9ge8ajae5qspvlvul4kg9l3apda.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyArUfWYUdURh6xatu_1dMFV6mGW1wucDRE"
+          "current_key": "AIzaSyBbBM5r7NfNB3pxyndF80rmqO-PV1Kyy2I"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "699363296269-o00jp9ge8ajae5qspvlvul4kg9l3apda.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
