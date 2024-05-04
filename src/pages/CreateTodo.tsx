@@ -19,17 +19,22 @@ import {MyContext} from '../../App';
 import {formatDateTime, selectData, toast} from '../utils/utilityFunctions';
 import {addList, getList} from '../services/lists';
 import moment from 'moment';
+import {editTodo} from '../services/todos';
 
-const CreateTodo = () => {
-  const [data, setData] = useState('');
+const CreateTodo = ({navigation, route}) => {
+  const {isEdit, item} = route.params;
+  const [data, setData] = useState(isEdit ? item.text : '');
   const [loading, setLoading] = useState(false);
-  const navigation = useNavigation();
   const [showCreateList, setShowCreateList] = useState(false);
   const [newList, setNewList] = useState('');
-  const [list, setLIst] = useState('');
-  const [descriptions, setDescriptions] = useState([]);
+  const [list, setLIst] = useState(
+    isEdit ? {label: item.lists, value: item.lists} : '',
+  );
+  const [descriptions, setDescriptions] = useState(
+    isEdit ? item.descriptions : [],
+  );
   const [descriptionValue, setDescriptionValue] = useState('');
-  const [dueDate, setDueData] = useState('');
+  const [dueDate, setDueData] = useState(isEdit ? item.dueDate : '');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
   const [listItem, setListItem] = useState(selectData);
@@ -47,7 +52,7 @@ const CreateTodo = () => {
     setData('');
   }
 
-  const addData = async () => {
+  const addDataTodo = async () => {
     if (data == '') {
       toast('Add Task Please');
       return;
@@ -81,6 +86,13 @@ const CreateTodo = () => {
     });
   }, []);
 
+  function updateData(id) {
+    editTodo({id, data, deviceId, list, descriptions, dueDate}, () => {
+      console.log('data updated');
+      navigation.goBack();
+    });
+  }
+
   return (
     <Container>
       <View style={styles.inputContainer}>
@@ -89,6 +101,10 @@ const CreateTodo = () => {
             backgroundColor: colors.cardbg,
             padding: 10,
             marginBottom: 5,
+            borderRadius: 5,
+            borderWidth: 0.2,
+            borderColor: 'gray',
+            elevation: 2,
           }}>
           <View
             style={{
@@ -105,12 +121,14 @@ const CreateTodo = () => {
               style={[styles.input, {width: '90%'}]}
               placeholderTextColor={'white'}
             />
-            <VectorIcon
-              iconName="close"
-              size={20}
-              color={data ? 'red' : 'white'}
-              onPress={() => setData('')}
-            />
+            {data && (
+              <VectorIcon
+                iconName="close"
+                size={20}
+                color={data ? 'red' : 'white'}
+                onPress={() => setData('')}
+              />
+            )}
           </View>
 
           <View
@@ -119,7 +137,7 @@ const CreateTodo = () => {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-            <Text style={{color: 'white', fontSize: 18, fontWeight: '500'}}>
+            <Text style={{color: 'gray', fontSize: 18, fontWeight: '500'}}>
               Task Content
             </Text>
             {descriptions.length != 0 && (
@@ -142,9 +160,8 @@ const CreateTodo = () => {
                   flexDirection: 'row',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginLeft: 20,
                 }}>
-                <Text style={{color: 'white', fontSize: 20}}>
+                <Text style={{color: 'white', fontSize: 16}}>
                   {index + 1}
                   {')'} {item}
                 </Text>
@@ -161,7 +178,12 @@ const CreateTodo = () => {
               </View>
             )}
           />
-          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginLeft: 20,
+            }}>
             <TextInput
               placeholder="Add Content"
               multiline
@@ -170,21 +192,24 @@ const CreateTodo = () => {
               style={[styles.input, {width: '95%'}]}
               placeholderTextColor={'white'}
             />
-            <VectorIcon
-              iconName="check"
-              size={20}
-              color={descriptionValue ? 'green' : 'white'}
-              onPress={() => {
-                if (descriptionValue) {
-                  setDescriptions(pre => [...pre, descriptionValue]);
-                  setDescriptionValue('');
-                }
-              }}
-            />
+
+            {descriptionValue && (
+              <VectorIcon
+                iconName="check"
+                size={20}
+                color={'green'}
+                onPress={() => {
+                  if (descriptionValue) {
+                    setDescriptions(pre => [...pre, descriptionValue]);
+                    setDescriptionValue('');
+                  }
+                }}
+              />
+            )}
           </View>
         </View>
 
-        <Text style={{color: 'white', fontSize: 22, fontWeight: '500'}}>
+        <Text style={{color: 'white', fontSize: 20, fontWeight: '500'}}>
           Add To List
         </Text>
         <View
@@ -261,13 +286,26 @@ const CreateTodo = () => {
             )}
           </View>
         )}
-
-        <Text style={{color: 'white', fontSize: 20}}>Due Date</Text>
-        <View style={{backgroundColor: colors.cardbg, padding: 20}}>
-          <Text style={{color: colors.pirmary, fontSize: 20}}>
-            {formatDateTime(dueDate)}
-          </Text>
-        </View>
+        {dueDate && (
+          <>
+            <Text style={{color: 'white', fontSize: 20}}>Due Date</Text>
+            <View
+              style={{
+                backgroundColor: colors.cardbg,
+                padding: 20,
+                alignItems: 'center',
+              }}>
+              <Text
+                style={{
+                  color: colors.pirmary,
+                  fontSize: 28,
+                  fontWeight: '800',
+                }}>
+                {formatDateTime(dueDate)}
+              </Text>
+            </View>
+          </>
+        )}
         <DateTimePickerModal
           textColor="pink"
           isDarkModeEnabled={true}
@@ -293,7 +331,9 @@ const CreateTodo = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={addData}
+          onPress={() => {
+            isEdit ? updateData(item.id) : addDataTodo;
+          }}
           style={[
             styles.dateButton,
             {backgroundColor: data ? 'green' : '#6200ee'},

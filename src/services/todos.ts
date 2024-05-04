@@ -43,3 +43,29 @@ export const toggleCompletion = async (data1, cb) => {
   toast('Todo status updated!');
   cb();
 };
+
+export const editTodo = async (data1, cb) => {
+  const {
+    id,
+    data,
+    descriptions = [],
+    deviceId = '',
+    list = '',
+    dueDate = '',
+  } = data1;
+  try {
+    await firestore().collection('Todos').doc(id).update({
+      text: data,
+      descriptions: descriptions,
+      completed: false,
+      createdAt: firestore.Timestamp.now(),
+      deviceId: deviceId,
+      lists: list,
+      dueData: dueDate,
+    });
+    toast('Todo updated!');
+    cb();
+  } catch (error) {
+    toast('Update Failed');
+  }
+};

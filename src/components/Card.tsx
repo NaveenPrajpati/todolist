@@ -1,28 +1,54 @@
 import React from 'react';
-import {View, Text, StyleSheet} from 'react-native';
+import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
 import VectorIcon from './VectorIcon';
 import moment from 'moment';
 import {toggleCompletion} from '../services/todos';
+import {colors, screenW} from '../utils/styles';
 
 interface FormatDateTimeProps {
   dateTimeString: string;
 }
 
-const Card = ({item, onCheckPress}) => {
+const Card = ({item, onCheckPress, onPress}) => {
   function formatedDate(time) {
     const today = moment();
+    const tomorrow = moment().add(1, 'days');
     const date = moment.unix(time);
-    const formattedDate = date.format('DD MM YYYY HH:mm');
-    return formattedDate;
+
+    // Check if the date is today
+    if (date.isSame(today, 'day')) {
+      return date.format('hh:mm A'); // Return only the time
+    } else if (date.isSame(tomorrow, 'day')) {
+      return 'tom'; // Return "tom" for tomorrow
+    } else {
+      return date.format('ddd, DD MMM hh:mm A'); // Return the full date and time
+    }
   }
 
+  const computeItemStyle = item => {
+    if (!item.dueData) {
+      return {borderLeftColor: 'gray', marginLeft: 10};
+    }
+
+    const isPastDue = item.dueData.seconds < new Date().getTime() / 1000;
+    return {
+      borderLeftColor: isPastDue ? 'red' : 'green',
+      marginLeft: isPastDue ? 5 : 35,
+    };
+  };
+  const isPastDue = item.dueData.seconds < new Date().getTime() / 1000;
+
+  const itemStyle = computeItemStyle(item);
+
   return (
-    <View
+    <TouchableOpacity
+      onPress={onPress}
       style={[
         styles.container,
+        itemStyle,
         {
-          borderLeftColor: item.dueData ? 'green' : 'gray',
-          marginLeft: item.dueData ? 25 : 5,
+          opacity: isPastDue ? 0.5 : 1,
+          backgroundColor: isPastDue ? 'red' : colors.cardbg,
         },
       ]}>
       <View style={styles.section}>
@@ -41,7 +67,9 @@ const Card = ({item, onCheckPress}) => {
       <View style={styles.section}>
         <Text style={styles.currentValue}>89 kg</Text>
         {item.dueData && (
-          <Text style={styles.target}>{formatedDate(item.dueData)}</Text>
+          <Text style={[styles.target, {color: isPastDue ? 'red' : 'cyan'}]}>
+            {formatedDate(item.dueData)}
+          </Text>
         )}
         <VectorIcon
           iconName={item.completed ? 'checkbox' : 'checkbox-outline'}
@@ -56,7 +84,7 @@ const Card = ({item, onCheckPress}) => {
           }}
         />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -68,7 +96,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
-    width: 280, // specify the width
+    width: screenW * 0.8,
     borderLeftWidth: 3,
     borderLeftColor: 'red',
     marginVertical: 5,
@@ -85,7 +113,7 @@ const styles = StyleSheet.create({
   },
   target: {
     color: '#999999', // lighter grey for the target
-    fontSize: 14,
+    fontSize: 12,
   },
   divider: {
     backgroundColor: '#999999', // grey divider

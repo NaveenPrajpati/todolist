@@ -182,7 +182,13 @@ const HomeScreen = (): JSX.Element => {
       <FlatList
         data={todos.filter(it => it.text.includes(searchQuery))}
         renderItem={({item, index}) => (
-          <Card item={item} onCheckPress={() => getAllTodos()} />
+          <Card
+            item={item}
+            onCheckPress={() => getAllTodos()}
+            onPress={() => {
+              navigation.navigate('CreateTodo', {isEdit: true, item});
+            }}
+          />
         )}
         keyExtractor={item => item.id}
       />
@@ -241,7 +247,9 @@ const HomeScreen = (): JSX.Element => {
       </View>
       <TouchableOpacity
         style={styles.addButton}
-        onPress={() => navigation.navigate('CreateTodo')}>
+        onPress={() =>
+          navigation.navigate('CreateTodo', {isEdit: false, item: null})
+        }>
         <VectorIcon iconName="plus" size={24} color="white" />
       </TouchableOpacity>
     </Container>
