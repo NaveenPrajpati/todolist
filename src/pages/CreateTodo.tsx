@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useContext, useRef, useState} from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -6,43 +6,64 @@ import {
   TouchableOpacity,
   Text,
   ToastAndroid,
+  FlatList,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/AntDesign';
 import firestore from '@react-native-firebase/firestore';
-import {getUniqueId} from 'react-native-device-info';
 import {useNavigation} from '@react-navigation/native';
+import Container from '../components/Container';
+import {colors} from '../utils/styles';
+import VectorIcon from '../components/VectorIcon';
+import SelectTag from '../components/Dropdown';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import {MyContext} from '../../App';
+import {selectData, toast} from '../utils/utilityFunctions';
 
 const CreateTodo = () => {
   const [data, setData] = useState('');
   const [loading, setLoading] = useState(false);
   const navigation = useNavigation();
+  const [showCreateList, setShowCreateList] = useState(false);
+  const [newList, setNewList] = useState('');
+  const [list, setLIst] = useState({});
+  const [descriptions, setDescriptions] = useState([]);
+  const [descriptionValue, setDescriptionValue] = useState('');
+  const [dueDate, setDueData] = useState('');
+  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
+  const {deviceId, setDeviceId} = useContext(MyContext);
+
+  const handleDateChange = (date: Date) => {
+    console.log(date);
+    setDueData(date);
+    setDatePickerVisibility(false);
+  };
+
+  function resetData() {
+    setDescriptionValue('');
+    setDescriptions([]);
+    setData('');
+  }
 
   const addData = async () => {
-    if (data.trim() === '') {
-      ToastAndroid.show(
-        'Please enter some text for the to-do.',
-        ToastAndroid.SHORT,
-      );
+    if (data == '') {
+      toast('Please add todo content');
       return;
     }
-
     setLoading(true);
-
     try {
       await firestore().collection('Todos').add({
         text: data,
+        descriptions: descriptions,
         completed: false,
         createdAt: firestore.Timestamp.now(),
-        deviceId: getUniqueId(),
+        deviceId: deviceId,
+        lists: list,
+        dueData: dueDate,
       });
-      ToastAndroid.show('Todo added!', ToastAndroid.BOTTOM);
-      setData(''); // Clear the input field
-      navigation.goBack(); // Navigate back to the previous screen
+      toast('Todo added!');
+      resetData();
+      navigation.goBack();
     } catch (error) {
-      ToastAndroid.show(
-        'Failed to add the to-do. Try again.',
-        ToastAndroid.SHORT,
-      );
+      toast('Failed to add the to-do. Try again.');
       console.error('Error adding document: ', error);
     } finally {
       setLoading(false);
@@ -50,32 +71,183 @@ const CreateTodo = () => {
   };
 
   return (
-    <View style={{backgroundColor: '#EFEFEF', flex: 1}}>
-      <View style={styles.header}>
-        <Icon
-          name="arrowleft"
-          size={30}
-          color="white"
-          onPress={() => navigation.goBack()}
-        />
-        <Text style={styles.headerTitle}>Add Todo</Text>
-      </View>
+    <Container>
       <View style={styles.inputContainer}>
-        <TextInput
-          placeholder="Add your content"
-          multiline
-          onChangeText={setData}
-          value={data}
-          style={styles.input}
+        <View
+          style={{
+            backgroundColor: colors.cardbg,
+            padding: 10,
+            marginBottom: 5,
+          }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+            <TextInput
+              placeholder="Add your content"
+              multiline
+              onChangeText={setData}
+              value={data}
+              style={[styles.input, {width: '90%'}]}
+              placeholderTextColor={'white'}
+            />
+            <VectorIcon iconName="phone" size={20} color="white" />
+          </View>
+
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+            <Text style={{color: 'white', fontSize: 18, fontWeight: '500'}}>
+              Description
+            </Text>
+            <VectorIcon iconName="plus" size={20} color="white" />
+          </View>
+          <FlatList
+            data={descriptions}
+            renderItem={({item, index}) => (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginLeft: 20,
+                }}>
+                <Text style={{color: 'white', fontSize: 20}}>
+                  {index + 1}
+                  {')'} {item}
+                </Text>
+                <VectorIcon
+                  iconName="close"
+                  size={20}
+                  color="white"
+                  onPress={() => {
+                    const arr = descriptions.filter(it => it != item);
+                    setDescriptions(arr);
+                  }}
+                />
+              </View>
+            )}
+          />
+          <View style={{flexDirection: 'row', alignItems: 'center'}}>
+            <TextInput
+              placeholder="Add todo tasks"
+              multiline
+              onChangeText={setDescriptionValue}
+              value={descriptionValue}
+              style={[styles.input, {width: '95%'}]}
+              placeholderTextColor={'white'}
+            />
+            <VectorIcon
+              iconName="check"
+              size={20}
+              color="white"
+              onPress={() => {
+                if (descriptionValue) {
+                  setDescriptions(pre => [...pre, descriptionValue]);
+                  setDescriptionValue('');
+                }
+              }}
+            />
+          </View>
+        </View>
+
+        <Text style={{color: 'white', fontSize: 22, fontWeight: '500'}}>
+          ADD TO List
+        </Text>
+        <View
+          style={{
+            backgroundColor: colors.cardbg,
+            padding: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+          }}>
+          <VectorIcon
+            iconName="plus"
+            size={24}
+            color="white"
+            onPress={() => setShowCreateList(pre => !pre)}
+          />
+
+          <SelectTag data={selectData} />
+        </View>
+        {showCreateList && (
+          <View
+            style={{
+              flexDirection: 'row',
+            }}>
+            <TextInput
+              placeholder="List name"
+              multiline
+              onChangeText={e => {
+                let nd = {label: e, value: e};
+                setNewList(nd);
+              }}
+              value={newList?.value}
+              style={[styles.input, {width: '90%'}]}
+              placeholderTextColor={'white'}
+            />
+            <View
+              style={{
+                justifyContent: 'space-around',
+                marginLeft: 5,
+              }}>
+              <VectorIcon
+                iconName="close"
+                size={20}
+                color="red"
+                onPress={() => {
+                  setNewList('');
+                  setShowCreateList(false);
+                }}
+              />
+              <VectorIcon
+                iconName="check"
+                size={20}
+                color="green"
+                onPress={() => {
+                  addList();
+                  setShowCreateList(false);
+                }}
+              />
+            </View>
+          </View>
+        )}
+        <DateTimePickerModal
+          textColor="pink"
+          isDarkModeEnabled={true}
+          minimumDate={new Date()}
+          isVisible={isDatePickerVisible}
+          mode="datetime"
+          onConfirm={handleDateChange}
+          onCancel={() => setDatePickerVisibility(false)}
+          style={{backgroundColor: colors.pirmary}}
         />
+      </View>
+
+      <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
         <TouchableOpacity
           onPress={addData}
-          style={styles.addButton}
+          style={styles.dateButton}
           disabled={loading}>
-          <Text style={styles.addButtonText}>Add</Text>
+          <VectorIcon iconName="check" size={24} color="white" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => setDatePickerVisibility(true)}>
+          <VectorIcon
+            iconName="date-range"
+            iconPack="MaterialIcons"
+            size={24}
+            color="white"
+          />
         </TouchableOpacity>
       </View>
-    </View>
+    </Container>
   );
 };
 
@@ -97,14 +269,15 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     margin: 10,
+    flex: 1,
   },
   input: {
-    backgroundColor: 'white',
-    borderRadius: 10,
+    color: 'white',
     fontSize: 18,
     padding: 20,
     marginVertical: 5,
-    elevation: 2,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.pirmary,
   },
   addButton: {
     backgroundColor: 'purple',
@@ -117,5 +290,14 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '700',
     textAlign: 'center',
+  },
+  dateButton: {
+    backgroundColor: '#6200ee',
+    borderRadius: 30,
+    padding: 10,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

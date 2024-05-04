@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -16,9 +16,13 @@ import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 import notifee from '@notifee/react-native';
-import {getUniqueId} from 'react-native-device-info';
+
 import {useNavigation} from '@react-navigation/native';
 import VectorIcon from './components/VectorIcon';
+import Card from './components/Card';
+import Container from './components/Container';
+import {getDeviceId, getUniqueId} from 'react-native-device-info';
+import {MyContext} from '../App';
 
 interface TodoItem {
   id: string;
@@ -36,10 +40,11 @@ const HomeScreen = (): JSX.Element => {
   const [newText, setNewText] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const textRef = useRef<TextInput>(null);
-  const deviceIdentifier = getUniqueId();
+
+  const {deviceId, setDeviceId} = useContext(MyContext);
+
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -65,7 +70,7 @@ const HomeScreen = (): JSX.Element => {
     try {
       const todosSnapshot = await firestore()
         .collection('Todos')
-        .where('deviceId', '==', deviceIdentifier)
+        .where('deviceId', '==', deviceId)
         .get();
 
       const fetchedTodos = todosSnapshot.docs.map(doc => ({
@@ -79,29 +84,38 @@ const HomeScreen = (): JSX.Element => {
     }
     setLoading(false);
   };
-
   useEffect(() => {
+    async function getId() {
+      const idd = await getUniqueId();
+      setDeviceId(idd);
+    }
+    getId();
+  }, []);
+  useEffect(() => {
+    console.log(deviceId);
+    if (!deviceId) return;
+
     const unsubscribe = firestore()
       .collection('Todos')
-      .where('deviceId', '==', getUniqueId())
+      .where('deviceId', '==', deviceId)
       .onSnapshot(
         snapshot => {
           const todosData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
           }));
-          console.log(todosData);
+          console.log('Fetched Todos:', todosData);
           setTodos(todosData);
           setLoading(false);
         },
         err => {
-          console.log(err);
+          console.error('Error fetching todos:', err); // Improved error logging.
           setLoading(false);
         },
       );
 
     return () => unsubscribe();
-  }, []);
+  }, [deviceId]);
 
   const onDisplayNotification = async (
     data: FirebaseMessagingTypes.RemoteMessage,
@@ -172,7 +186,8 @@ const HomeScreen = (): JSX.Element => {
   };
 
   return (
-    <View style={styles.container}>
+    <Container>
+      <Card />
       <FlatList
         data={todos}
         renderItem={({item, index}) => (
@@ -180,11 +195,6 @@ const HomeScreen = (): JSX.Element => {
             <Text style={styles.todoText}>{item.text}</Text>
 
             <TouchableOpacity onPress={() => toggleCompletion()}>
-              {/* <Icon
-              name={item.completed ? 'checkcircle' : 'checkcircleo'}
-              size={20}
-              color={item.completed ? 'green' : 'grey'}
-            /> */}
               <VectorIcon
                 iconName={item.completed ? 'checkcircle' : 'checkcircleo'}
                 iconPack="AntDesign"
@@ -213,9 +223,9 @@ const HomeScreen = (): JSX.Element => {
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('CreateTodo')}>
-        <Text style={styles.addButtonText}>Add Todo</Text>
+        <VectorIcon iconName="plus" size={24} color="white" />
       </TouchableOpacity>
-    </View>
+    </Container>
   );
 };
 
@@ -233,8 +243,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     marginVertical: 8,
-    backgroundColor: 'pink',
+    backgroundColor: 'white',
     borderRadius: 5,
+    width: '100%',
   },
   todoText: {
     fontSize: 16,
@@ -251,8 +262,12 @@ const styles = StyleSheet.create({
     bottom: 20,
     right: 20,
     backgroundColor: '#6200ee',
-    borderRadius: 20,
+    borderRadius: 30,
     padding: 10,
+    width: 60,
+    height: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButtonText: {
     color: 'white',
