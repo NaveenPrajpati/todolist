@@ -1,11 +1,22 @@
 import {useNavigation, useNavigationState} from '@react-navigation/native';
-import React from 'react';
-import {View, Text, StyleSheet, TouchableOpacity} from 'react-native';
+import React, {useContext, useState} from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import VectorIcon from './VectorIcon';
+import {MyContext} from '../../App';
+import {colors} from '../utils/styles';
+import FilterMenu from './FilterMenu';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
   const state = useNavigationState(state => state);
+  const [showSearch, setShowSearch] = useState(false);
+  const {searchQuery, setSearchQuery} = useContext(MyContext);
 
   // Function to handle back press
   const onBackPress = () => {
@@ -28,10 +39,25 @@ const Header = ({title}) => {
           </TouchableOpacity>
         )}
         <Text style={styles.text}>{title}</Text>
+        {showSearch && (
+          <TextInput
+            placeholder="Search here"
+            multiline
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={[styles.input, {width: '50%'}]}
+            placeholderTextColor={'white'}
+          />
+        )}
       </View>
-      <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-        <VectorIcon iconName="search" size={20} color="white" />
-        <VectorIcon iconName="file" size={20} color="white" />
+      <View style={{flexDirection: 'row', alignItems: 'center', gap: 20}}>
+        <VectorIcon
+          iconName="search"
+          size={20}
+          color="white"
+          onPress={() => setShowSearch(pre => !pre)}
+        />
+        <FilterMenu />
       </View>
     </View>
   );
@@ -59,6 +85,14 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  input: {
+    color: 'white',
+    fontSize: 14,
+    padding: 5,
+
+    borderBottomWidth: 2,
+    borderBottomColor: colors.pirmary,
   },
 });
 

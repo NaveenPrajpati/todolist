@@ -1,4 +1,4 @@
-import React, {useContext, useRef, useState} from 'react';
+import React, {useContext, useEffect, useRef, useState} from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -16,7 +16,9 @@ import VectorIcon from '../components/VectorIcon';
 import SelectTag from '../components/Dropdown';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {MyContext} from '../../App';
-import {selectData, toast} from '../utils/utilityFunctions';
+import {formatDateTime, selectData, toast} from '../utils/utilityFunctions';
+import {addList, getList} from '../services/lists';
+import moment from 'moment';
 
 const CreateTodo = () => {
   const [data, setData] = useState('');
@@ -24,15 +26,17 @@ const CreateTodo = () => {
   const navigation = useNavigation();
   const [showCreateList, setShowCreateList] = useState(false);
   const [newList, setNewList] = useState('');
-  const [list, setLIst] = useState({});
+  const [list, setLIst] = useState('');
   const [descriptions, setDescriptions] = useState([]);
   const [descriptionValue, setDescriptionValue] = useState('');
   const [dueDate, setDueData] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
+  const [listItem, setListItem] = useState(selectData);
 
   const handleDateChange = (date: Date) => {
     console.log(date);
+    setDueData(data);
     setDueData(date);
     setDatePickerVisibility(false);
   };
@@ -45,7 +49,7 @@ const CreateTodo = () => {
 
   const addData = async () => {
     if (data == '') {
-      toast('Please add todo content');
+      toast('Add Task Please');
       return;
     }
     setLoading(true);
@@ -63,12 +67,19 @@ const CreateTodo = () => {
       resetData();
       navigation.goBack();
     } catch (error) {
-      toast('Failed to add the to-do. Try again.');
+      toast('Failed to add Task. Try again.');
       console.error('Error adding document: ', error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    getList(deviceId, e => {
+      // console.log(JSON.stringify(e, null, 2));
+      setListItem(pre => [...pre, ...e]);
+    });
+  }, []);
 
   return (
     <Container>
@@ -84,16 +95,22 @@ const CreateTodo = () => {
               flexDirection: 'row',
               justifyContent: 'space-between',
               alignItems: 'center',
+              marginBottom: 10,
             }}>
             <TextInput
-              placeholder="Add your content"
+              placeholder="Add your Task"
               multiline
               onChangeText={setData}
               value={data}
               style={[styles.input, {width: '90%'}]}
               placeholderTextColor={'white'}
             />
-            <VectorIcon iconName="phone" size={20} color="white" />
+            <VectorIcon
+              iconName="close"
+              size={20}
+              color={data ? 'red' : 'white'}
+              onPress={() => setData('')}
+            />
           </View>
 
           <View
@@ -103,9 +120,19 @@ const CreateTodo = () => {
               alignItems: 'center',
             }}>
             <Text style={{color: 'white', fontSize: 18, fontWeight: '500'}}>
-              Description
+              Task Content
             </Text>
-            <VectorIcon iconName="plus" size={20} color="white" />
+            {descriptions.length != 0 && (
+              <VectorIcon
+                iconName="close"
+                size={20}
+                color="white"
+                onPress={() => {
+                  setDescriptions([]);
+                  setDescriptionValue('');
+                }}
+              />
+            )}
           </View>
           <FlatList
             data={descriptions}
@@ -122,9 +149,10 @@ const CreateTodo = () => {
                   {')'} {item}
                 </Text>
                 <VectorIcon
-                  iconName="close"
-                  size={20}
-                  color="white"
+                  iconName="delete"
+                  iconPack="AntDesign"
+                  size={18}
+                  color="red"
                   onPress={() => {
                     const arr = descriptions.filter(it => it != item);
                     setDescriptions(arr);
@@ -135,7 +163,7 @@ const CreateTodo = () => {
           />
           <View style={{flexDirection: 'row', alignItems: 'center'}}>
             <TextInput
-              placeholder="Add todo tasks"
+              placeholder="Add Content"
               multiline
               onChangeText={setDescriptionValue}
               value={descriptionValue}
@@ -145,7 +173,7 @@ const CreateTodo = () => {
             <VectorIcon
               iconName="check"
               size={20}
-              color="white"
+              color={descriptionValue ? 'green' : 'white'}
               onPress={() => {
                 if (descriptionValue) {
                   setDescriptions(pre => [...pre, descriptionValue]);
@@ -157,7 +185,7 @@ const CreateTodo = () => {
         </View>
 
         <Text style={{color: 'white', fontSize: 22, fontWeight: '500'}}>
-          ADD TO List
+          Add To List
         </Text>
         <View
           style={{
@@ -165,6 +193,7 @@ const CreateTodo = () => {
             padding: 10,
             flexDirection: 'row',
             alignItems: 'center',
+            justifyContent: 'space-between',
           }}>
           <VectorIcon
             iconName="plus"
@@ -173,7 +202,14 @@ const CreateTodo = () => {
             onPress={() => setShowCreateList(pre => !pre)}
           />
 
-          <SelectTag data={selectData} />
+          <SelectTag
+            data={listItem}
+            onChange={({value}) => {
+              setLIst(value);
+            }}
+            renderLeftIcon={() => null}
+            value={list?.value}
+          />
         </View>
         {showCreateList && (
           <View
@@ -191,32 +227,47 @@ const CreateTodo = () => {
               style={[styles.input, {width: '90%'}]}
               placeholderTextColor={'white'}
             />
-            <View
-              style={{
-                justifyContent: 'space-around',
-                marginLeft: 5,
-              }}>
-              <VectorIcon
-                iconName="close"
-                size={20}
-                color="red"
-                onPress={() => {
-                  setNewList('');
-                  setShowCreateList(false);
-                }}
-              />
-              <VectorIcon
-                iconName="check"
-                size={20}
-                color="green"
-                onPress={() => {
-                  addList();
-                  setShowCreateList(false);
-                }}
-              />
-            </View>
+            {newList?.value && (
+              <View
+                style={{
+                  justifyContent: 'space-around',
+                  marginLeft: 5,
+                }}>
+                <VectorIcon
+                  iconName="close"
+                  size={20}
+                  color="red"
+                  onPress={() => {
+                    setNewList({});
+                    setShowCreateList(false);
+                  }}
+                />
+                <VectorIcon
+                  iconName="check"
+                  size={20}
+                  color="green"
+                  onPress={() => {
+                    addList({data: newList, deviceId}, () => {
+                      toast('list added');
+                      getList(deviceId, e => {
+                        setListItem(pre => [...pre, e]);
+                      });
+                    });
+                    setNewList({});
+                    setShowCreateList(false);
+                  }}
+                />
+              </View>
+            )}
           </View>
         )}
+
+        <Text style={{color: 'white', fontSize: 20}}>Due Date</Text>
+        <View style={{backgroundColor: colors.cardbg, padding: 20}}>
+          <Text style={{color: colors.pirmary, fontSize: 20}}>
+            {formatDateTime(dueDate)}
+          </Text>
+        </View>
         <DateTimePickerModal
           textColor="pink"
           isDarkModeEnabled={true}
@@ -231,12 +282,6 @@ const CreateTodo = () => {
 
       <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
         <TouchableOpacity
-          onPress={addData}
-          style={styles.dateButton}
-          disabled={loading}>
-          <VectorIcon iconName="check" size={24} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
           style={styles.dateButton}
           onPress={() => setDatePickerVisibility(true)}>
           <VectorIcon
@@ -245,6 +290,16 @@ const CreateTodo = () => {
             size={24}
             color="white"
           />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={addData}
+          style={[
+            styles.dateButton,
+            {backgroundColor: data ? 'green' : '#6200ee'},
+          ]}
+          disabled={loading}>
+          <VectorIcon iconName="check" size={24} color={'white'} />
         </TouchableOpacity>
       </View>
     </Container>

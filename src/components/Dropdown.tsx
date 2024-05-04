@@ -1,27 +1,27 @@
-import React, {useState} from 'react';
+import React, {FC, ReactNode, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import VectorIcon from './VectorIcon';
 import {colors} from '../utils/styles';
 
-const SelectTag = ({data}) => {
-  const [value, setValue] = useState(null);
-  const [isFocus, setIsFocus] = useState(false);
+interface SelectTagProps {
+  data: Array<{label: string; value: string}>;
+  [key: string]: any;
+  onChange: () => void;
+  renderLeftIcon: () => ReactNode;
+  value: string;
+}
 
-  const renderLabel = () => {
-    if (value || isFocus) {
-      return (
-        <Text style={[styles.label, isFocus && {color: 'blue'}]}>
-          Dropdown label
-        </Text>
-      );
-    }
-    return null;
-  };
+const SelectTag: FC<SelectTagProps> = ({
+  data,
+  value,
+  onChange,
+  renderLeftIcon,
+}) => {
+  const [isFocus, setIsFocus] = useState(false);
 
   return (
     <View style={styles.container}>
-      {/* {renderLabel()} */}
       <Dropdown
         style={[styles.dropdown, isFocus && {borderColor: 'blue'}]}
         placeholderStyle={styles.placeholderStyle}
@@ -41,17 +41,8 @@ const SelectTag = ({data}) => {
         value={value}
         onFocus={() => setIsFocus(true)}
         onBlur={() => setIsFocus(false)}
-        onChange={item => {
-          setValue(item.value);
-          setIsFocus(false);
-        }}
-        renderLeftIcon={() => (
-          <VectorIcon
-            iconName="list"
-            color={isFocus ? colors.pirmary : 'white'}
-            size={20}
-          />
-        )}
+        onChange={onChange}
+        renderLeftIcon={renderLeftIcon}
       />
     </View>
   );
@@ -86,10 +77,12 @@ const styles = StyleSheet.create({
   placeholderStyle: {
     fontSize: 16,
     color: 'white',
+    marginHorizontal: 10,
   },
   selectedTextStyle: {
     fontSize: 16,
     color: 'white',
+    marginHorizontal: 10,
   },
   iconStyle: {
     width: 20,

@@ -1,20 +1,36 @@
 import firestore from '@react-native-firebase/firestore';
 import {toast} from '../utils/utilityFunctions';
 
-export const addList = async (id, data, cb) => {
-  await firestore().collection('Todos').doc(id).update({
-    lists: data,
+interface ListItem {
+  list: {lable: string; value: string};
+  deviceId: string;
+}
+
+export const addList = async (data1, cb) => {
+  const {data, deviceId} = data1;
+  await firestore().collection('Lists').add({
+    deviceId: deviceId,
+    list: data,
   });
   cb();
 };
-export const getList = async (id, setData) => {
+export const getList = async (deviceId, cb) => {
   try {
-    await firestore().collection('Lists').get();
-    toast('List added!');
-    setData('');
+    const todosSnapshot = await firestore()
+      .collection('Lists')
+      .where('deviceId', '==', deviceId)
+      .get();
+
+    // const fetchedList = todosSnapshot.docs.map(doc => ({
+    //   id: doc.id,
+    //   ...(doc.data() as ListItem),
+    // }));
+    const fetchedList = todosSnapshot.docs.map(doc => ({
+      ...doc.data().list,
+    }));
+    console.log(fetchedList);
+    cb(fetchedList);
   } catch (error) {
-    toast('Failed to add the list Try again.');
-    console.error('Error adding List', error);
-  } finally {
+    console.error(error);
   }
 };

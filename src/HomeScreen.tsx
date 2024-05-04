@@ -8,8 +8,8 @@ import {
   ActivityIndicator,
   ToastAndroid,
   Text,
+  Pressable,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/AntDesign';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import firestore from '@react-native-firebase/firestore';
 import messaging, {
@@ -23,6 +23,8 @@ import Card from './components/Card';
 import Container from './components/Container';
 import {getDeviceId, getUniqueId} from 'react-native-device-info';
 import {MyContext} from '../App';
+import {colors} from './utils/styles';
+import {addData} from './services/todos';
 
 interface TodoItem {
   id: string;
@@ -42,8 +44,9 @@ const HomeScreen = (): JSX.Element => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [loading, setLoading] = useState(false);
   const textRef = useRef<TextInput>(null);
+  const [data, setData] = useState('');
 
-  const {deviceId, setDeviceId} = useContext(MyContext);
+  const {deviceId, setDeviceId, searchQuery} = useContext(MyContext);
 
   const navigation = useNavigation();
 
@@ -92,7 +95,6 @@ const HomeScreen = (): JSX.Element => {
     getId();
   }, []);
   useEffect(() => {
-    console.log(deviceId);
     if (!deviceId) return;
 
     const unsubscribe = firestore()
@@ -104,7 +106,7 @@ const HomeScreen = (): JSX.Element => {
             id: doc.id,
             ...doc.data(),
           }));
-          console.log('Fetched Todos:', todosData);
+          console.log('Fetched Todos:', JSON.stringify(todosData, null, 2));
           setTodos(todosData);
           setLoading(false);
         },
@@ -136,16 +138,6 @@ const HomeScreen = (): JSX.Element => {
         },
       },
     });
-  };
-
-  const toggleCompletion = async (id: string, completed: boolean) => {
-    setLoading(true);
-    await firestore().collection('Todos').doc(id).update({
-      completed: !completed,
-    });
-    setLoading(false);
-    ToastAndroid.show('Todo status updated!', ToastAndroid.BOTTOM);
-    getAllTodos();
   };
 
   const editTodo = async (id: string) => {
@@ -187,39 +179,66 @@ const HomeScreen = (): JSX.Element => {
 
   return (
     <Container>
-      <Card />
       <FlatList
-        data={todos}
+        data={todos.filter(it => it.text.includes(searchQuery))}
         renderItem={({item, index}) => (
-          <View style={styles.todoItem}>
-            <Text style={styles.todoText}>{item.text}</Text>
-
-            <TouchableOpacity onPress={() => toggleCompletion()}>
-              <VectorIcon
-                iconName={item.completed ? 'checkcircle' : 'checkcircleo'}
-                iconPack="AntDesign"
-                size={20}
-                color={item.completed ? 'green' : 'grey'}
-              />
-            </TouchableOpacity>
-          </View>
+          <Card item={item} onCheckPress={() => getAllTodos()} />
         )}
         keyExtractor={item => item.id}
       />
-      {editable && (
-        <TextInput
-          ref={textRef}
-          value={newText}
-          onChangeText={setNewText}
-          style={styles.input}
-        />
-      )}
+
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         mode="date"
         onConfirm={handleDateChange}
         onCancel={() => setDatePickerVisibility(false)}
       />
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 10,
+          paddingHorizontal: 10,
+        }}>
+        <Pressable
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            backgroundColor: 'skyblue',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
+          <VectorIcon
+            iconName="microphone"
+            size={20}
+            color={'white'}
+            onPress={() => {}}
+          />
+        </Pressable>
+        <TextInput
+          placeholder="Add your Task"
+          multiline
+          onChangeText={setData}
+          value={data}
+          style={[styles.input, {width: '80%'}]}
+          placeholderTextColor={'white'}
+        />
+        {data && (
+          <VectorIcon
+            iconName="check"
+            size={20}
+            color={true ? 'green' : 'white'}
+            onPress={() => {
+              addData({data, deviceId}, () => {
+                setData('');
+                getAllTodos();
+              });
+            }}
+          />
+        )}
+      </View>
       <TouchableOpacity
         style={styles.addButton}
         onPress={() => navigation.navigate('CreateTodo')}>
@@ -251,15 +270,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    width: '90%',
-    padding: 10,
+    color: 'white',
+    fontSize: 18,
+    padding: 20,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.pirmary,
   },
   addButton: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 80,
     right: 20,
     backgroundColor: '#6200ee',
     borderRadius: 30,

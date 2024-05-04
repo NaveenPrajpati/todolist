@@ -1,17 +1,60 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
+import VectorIcon from './VectorIcon';
+import moment from 'moment';
+import {toggleCompletion} from '../services/todos';
 
-const Card = () => {
+interface FormatDateTimeProps {
+  dateTimeString: string;
+}
+
+const Card = ({item, onCheckPress}) => {
+  function formatedDate(time) {
+    const today = moment();
+    const date = moment.unix(time);
+    const formattedDate = date.format('DD MM YYYY HH:mm');
+    return formattedDate;
+  }
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        {
+          borderLeftColor: item.dueData ? 'green' : 'gray',
+          marginLeft: item.dueData ? 25 : 5,
+        },
+      ]}>
       <View style={styles.section}>
-        <Text style={styles.currentValue}>8 day</Text>
-        <Text style={styles.target}>target: 24 days</Text>
+        <Text style={styles.currentValue}>{item.text}</Text>
+        {item?.descriptions?.map((it, index) => (
+          <Text key={index} style={styles.target}>
+            {index + 1}
+            {')'} {it}
+          </Text>
+        ))}
+        <Text style={[styles.target, {color: 'green'}]}>
+          {formatedDate(item.createdAt.seconds)}
+        </Text>
       </View>
       <View style={styles.divider}></View>
       <View style={styles.section}>
         <Text style={styles.currentValue}>89 kg</Text>
-        <Text style={styles.target}>target: 78 kg</Text>
+        {item.dueData && (
+          <Text style={styles.target}>{formatedDate(item.dueData)}</Text>
+        )}
+        <VectorIcon
+          iconName={item.completed ? 'checkbox' : 'checkbox-outline'}
+          iconPack="Ionicons"
+          size={20}
+          color="white"
+          onPress={() => {
+            toggleCompletion(
+              {id: item.id, completed: item.completed},
+              onCheckPress,
+            );
+          }}
+        />
       </View>
     </View>
   );
@@ -26,7 +69,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-evenly',
     width: 280, // specify the width
-    height: 80, // specify the height
+    borderLeftWidth: 3,
+    borderLeftColor: 'red',
+    marginVertical: 5,
   },
   section: {
     flex: 1,
