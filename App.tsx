@@ -5,6 +5,8 @@ const App = () => {
   const [deviceId, setDeviceId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
+  const [selectedItems, setSelectedItems] = useState([]);
+  const [todos, setTodos] = useState([]);
 
   const values = {
     deviceId,
@@ -13,6 +15,10 @@ const App = () => {
     setSearchQuery,
     filterQuery,
     setFilterQuery,
+    selectedItems,
+    setSelectedItems,
+    todos,
+    setTodos,
   };
 
   return (

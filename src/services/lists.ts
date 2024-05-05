@@ -28,7 +28,7 @@ export const getList = async (deviceId, cb) => {
     const fetchedList = todosSnapshot.docs.map(doc => ({
       ...doc.data().list,
     }));
-    console.log(fetchedList);
+    // console.log(fetchedList);
     cb(fetchedList);
   } catch (error) {
     console.error(error);

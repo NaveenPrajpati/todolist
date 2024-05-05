@@ -36,7 +36,6 @@ interface TodoItem {
 }
 
 const HomeScreen = (): JSX.Element => {
-  const [todos, setTodos] = useState<TodoItem[]>([]);
   const [editable, setEditable] = useState(false);
   const [editIndex, setEditIndex] = useState<number | undefined>();
   const [newText, setNewText] = useState('');
@@ -46,7 +45,15 @@ const HomeScreen = (): JSX.Element => {
   const textRef = useRef<TextInput>(null);
   const [data, setData] = useState('');
 
-  const {deviceId, setDeviceId, searchQuery} = useContext(MyContext);
+  const {
+    deviceId,
+    setDeviceId,
+    searchQuery,
+    selectedItems,
+    setSelectedItems,
+    todos,
+    setTodos,
+  } = useContext(MyContext);
 
   const navigation = useNavigation();
 
@@ -140,18 +147,6 @@ const HomeScreen = (): JSX.Element => {
     });
   };
 
-  const editTodo = async (id: string) => {
-    setLoading(true);
-    await firestore().collection('Todos').doc(id).update({
-      text: newText,
-    });
-    setLoading(false);
-    setEditable(false);
-    setEditIndex(undefined);
-    ToastAndroid.show('Todo updated!', ToastAndroid.BOTTOM);
-    getAllTodos();
-  };
-
   const removeTodo = async (id: string) => {
     setLoading(true);
     await firestore().collection('Todos').doc(id).delete();
@@ -184,8 +179,18 @@ const HomeScreen = (): JSX.Element => {
         renderItem={({item, index}) => (
           <Card
             item={item}
+            selectedItems={selectedItems}
+            onLongPress={() => {}}
+            onSelectPress={() => {
+              const ind = selectedItems.indexOf(item.id);
+              if (ind >= 0) {
+                const newSelectedItems = [...selectedItems];
+                newSelectedItems.splice(ind, 1);
+                setSelectedItems(newSelectedItems);
+              } else setSelectedItems(pre => [...pre, item.id]);
+            }}
             onCheckPress={() => getAllTodos()}
-            onPress={() => {
+            onEditPress={() => {
               navigation.navigate('CreateTodo', {isEdit: true, item});
             }}
           />

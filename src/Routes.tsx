@@ -7,10 +7,23 @@ import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
 import CreateTodo from './pages/CreateTodo';
 import Header from './components/Header';
+import notifee, {EventType} from '@notifee/react-native';
 
 const Stack = createNativeStackNavigator();
 
 function Routes() {
+  React.useEffect(() => {
+    return notifee.onForegroundEvent(({type, detail}) => {
+      switch (type) {
+        case EventType.DISMISSED:
+          console.log('User dismissed notification', detail.notification);
+          break;
+        case EventType.PRESS:
+          console.log('User pressed notification', detail.notification);
+          break;
+      }
+    });
+  }, []);
   return (
     <NavigationContainer>
       <Stack.Navigator

@@ -19,10 +19,10 @@ import {MyContext} from '../../App';
 import {formatDateTime, selectData, toast} from '../utils/utilityFunctions';
 import {addList, getList} from '../services/lists';
 import moment from 'moment';
-import {editTodo} from '../services/todos';
+import {addData, editTodo} from '../services/todos';
 
 const CreateTodo = ({navigation, route}) => {
-  const {isEdit, item} = route.params;
+  const {isEdit = false, item} = route.params;
   const [data, setData] = useState(isEdit ? item.text : '');
   const [loading, setLoading] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
@@ -34,15 +34,17 @@ const CreateTodo = ({navigation, route}) => {
     isEdit ? item.descriptions : [],
   );
   const [descriptionValue, setDescriptionValue] = useState('');
-  const [dueDate, setDueData] = useState(isEdit ? item.dueDate : '');
+  const [dueDate, setDueDate] = useState(
+    isEdit ? moment.unix(item.dueDate).toISOString() : '',
+  );
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
   const [listItem, setListItem] = useState(selectData);
 
   const handleDateChange = (date: Date) => {
     console.log(date);
-    setDueData(data);
-    setDueData(date);
+    setDueDate(date);
+
     setDatePickerVisibility(false);
   };
 
@@ -50,33 +52,15 @@ const CreateTodo = ({navigation, route}) => {
     setDescriptionValue('');
     setDescriptions([]);
     setData('');
+    setDueDate('');
+    setLIst([]);
   }
 
   const addDataTodo = async () => {
-    if (data == '') {
-      toast('Add Task Please');
-      return;
-    }
-    setLoading(true);
-    try {
-      await firestore().collection('Todos').add({
-        text: data,
-        descriptions: descriptions,
-        completed: false,
-        createdAt: firestore.Timestamp.now(),
-        deviceId: deviceId,
-        lists: list,
-        dueData: dueDate,
-      });
-      toast('Todo added!');
+    addData({data, descriptions, deviceId, list, dueDate}, () => {
       resetData();
       navigation.goBack();
-    } catch (error) {
-      toast('Failed to add Task. Try again.');
-      console.error('Error adding document: ', error);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   useEffect(() => {
@@ -84,11 +68,12 @@ const CreateTodo = ({navigation, route}) => {
       // console.log(JSON.stringify(e, null, 2));
       setListItem(pre => [...pre, ...e]);
     });
+    return () => resetData();
   }, []);
 
   function updateData(id) {
     editTodo({id, data, deviceId, list, descriptions, dueDate}, () => {
-      console.log('data updated');
+      resetData();
       navigation.goBack();
     });
   }
@@ -209,6 +194,8 @@ const CreateTodo = ({navigation, route}) => {
           </View>
         </View>
 
+        {/* list section */}
+
         <Text style={{color: 'white', fontSize: 20, fontWeight: '500'}}>
           Add To List
         </Text>
@@ -286,6 +273,8 @@ const CreateTodo = ({navigation, route}) => {
             )}
           </View>
         )}
+
+        {/* date section */}
         {dueDate && (
           <>
             <Text style={{color: 'white', fontSize: 20}}>Due Date</Text>
@@ -294,6 +283,10 @@ const CreateTodo = ({navigation, route}) => {
                 backgroundColor: colors.cardbg,
                 padding: 20,
                 alignItems: 'center',
+                borderRadius: 5,
+                borderWidth: 0.2,
+                borderColor: 'gray',
+                elevation: 2,
               }}>
               <Text
                 style={{
@@ -332,7 +325,8 @@ const CreateTodo = ({navigation, route}) => {
 
         <TouchableOpacity
           onPress={() => {
-            isEdit ? updateData(item.id) : addDataTodo;
+            if (isEdit) updateData(item.id);
+            else addDataTodo();
           }}
           style={[
             styles.dateButton,

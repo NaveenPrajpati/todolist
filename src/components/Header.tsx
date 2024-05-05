@@ -11,19 +11,50 @@ import VectorIcon from './VectorIcon';
 import {MyContext} from '../../App';
 import {colors} from '../utils/styles';
 import FilterMenu from './FilterMenu';
+import {removeTodo} from '../services/todos';
+import notifee from '@notifee/react-native';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
   const state = useNavigationState(state => state);
   const [showSearch, setShowSearch] = useState(false);
-  const {searchQuery, setSearchQuery} = useContext(MyContext);
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedItems,
+    setSelectedItems,
+    todos,
+    setTodos,
+  } = useContext(MyContext);
 
   // Function to handle back press
   const onBackPress = () => {
     navigation.goBack();
   };
 
-  // Determine if the back button should be shown
+  async function onDisplayNotification() {
+    // Request permissions (required for iOS)
+    await notifee.requestPermission();
+
+    // Create a channel (required for Android)
+    const channelId = await notifee.createChannel({
+      id: 'default',
+      name: 'Default Channel',
+    });
+
+    // Display a notification
+    await notifee.displayNotification({
+      title: 'Notification Title',
+      body: 'Main body content of the notification',
+      android: {
+        channelId,
+        pressAction: {
+          id: 'default',
+        },
+      },
+    });
+  }
+
   const showBackButton = state.index > 0;
   return (
     <View style={styles.container}>
@@ -51,6 +82,44 @@ const Header = ({title}) => {
         )}
       </View>
       <View style={{flexDirection: 'row', alignItems: 'center', gap: 20}}>
+        {selectedItems.length != 0 && (
+          <>
+            <VectorIcon
+              iconName="delete"
+              iconPack="AntDesign"
+              size={20}
+              color="red"
+              onPress={() => {
+                removeTodo(selectedItems, () => {
+                  console.log('todo deleted');
+                  setSelectedItems([]);
+                });
+              }}
+            />
+            <VectorIcon
+              iconName="playlist-add-check"
+              iconPack="MaterialIcons"
+              size={24}
+              color="white"
+              onPress={() => {
+                if (todos.length == selectedItems.length) {
+                  setSelectedItems([]);
+                } else {
+                  const arr = todos.map(({id}) => {
+                    return id;
+                  });
+                  setSelectedItems(arr);
+                }
+              }}
+            />
+          </>
+        )}
+        <VectorIcon
+          iconName="search"
+          size={20}
+          color="white"
+          onPress={() => onDisplayNotification()}
+        />
         <VectorIcon
           iconName="search"
           size={20}

@@ -10,7 +10,6 @@ export const addData = async (data1, cb) => {
     list = '',
     dueDate = '',
   } = data1;
-  console.log(data);
   if (data == '') {
     toast('Add Task Please');
     return;
@@ -23,7 +22,7 @@ export const addData = async (data1, cb) => {
       createdAt: firestore.Timestamp.now(),
       deviceId: deviceId,
       lists: list,
-      dueData: dueDate,
+      dueDate: dueDate,
     });
     toast('Todo added!');
     Keyboard.dismiss();
@@ -61,11 +60,22 @@ export const editTodo = async (data1, cb) => {
       createdAt: firestore.Timestamp.now(),
       deviceId: deviceId,
       lists: list,
-      dueData: dueDate,
+      dueDate: dueDate,
     });
     toast('Todo updated!');
     cb();
   } catch (error) {
     toast('Update Failed');
   }
+};
+
+export const removeTodo = async (data, cb) => {
+  const batch = firestore().batch();
+  data.forEach(id => {
+    const docRef = firestore().collection('Todos').doc(id);
+    batch.delete(docRef);
+  });
+  await batch.commit();
+  toast('Todos deleted successfully!');
+  cb();
 };
