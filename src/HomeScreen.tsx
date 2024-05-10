@@ -5,9 +5,7 @@ import {
   TextInput,
   View,
   TouchableOpacity,
-  ActivityIndicator,
   ToastAndroid,
-  Text,
   Pressable,
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -16,12 +14,11 @@ import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 import notifee from '@notifee/react-native';
-
 import {useNavigation} from '@react-navigation/native';
 import VectorIcon from './components/VectorIcon';
 import Card from './components/Card';
 import Container from './components/Container';
-import {getDeviceId, getUniqueId} from 'react-native-device-info';
+import {getUniqueId} from 'react-native-device-info';
 import {MyContext} from '../App';
 import {colors} from './utils/styles';
 import {addData} from './services/todos';
@@ -36,8 +33,6 @@ interface TodoItem {
 }
 
 const HomeScreen = (): JSX.Element => {
-  const [editable, setEditable] = useState(false);
-  const [editIndex, setEditIndex] = useState<number | undefined>();
   const [newText, setNewText] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
@@ -61,9 +56,7 @@ const HomeScreen = (): JSX.Element => {
     const getDeviceToken = async () => {
       await messaging().registerDeviceForRemoteMessages();
       const token = await messaging().getToken();
-      // console.log(token);
     };
-
     getDeviceToken();
   }, []);
 
@@ -71,7 +64,6 @@ const HomeScreen = (): JSX.Element => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       await onDisplayNotification(remoteMessage);
     });
-
     return unsubscribe;
   }, []);
 
@@ -82,25 +74,25 @@ const HomeScreen = (): JSX.Element => {
         .collection('Todos')
         .where('deviceId', '==', deviceId)
         .get();
-
       const fetchedTodos = todosSnapshot.docs.map(doc => ({
         id: doc.id,
         ...(doc.data() as TodoItem),
       }));
-      console.log(fetchedTodos);
       setTodos(fetchedTodos);
     } catch (error) {
-      console.error(error);
+      console.error('Error fetching todos:', error);
     }
     setLoading(false);
   };
+
   useEffect(() => {
     async function getId() {
-      const idd = await getUniqueId();
-      setDeviceId(idd);
+      const uniqueId = await getUniqueId();
+      setDeviceId(uniqueId);
     }
     getId();
   }, []);
+
   useEffect(() => {
     if (!deviceId) return;
 
@@ -113,12 +105,11 @@ const HomeScreen = (): JSX.Element => {
             id: doc.id,
             ...doc.data(),
           }));
-          console.log('Fetched Todos:', JSON.stringify(todosData, null, 2));
           setTodos(todosData);
           setLoading(false);
         },
         err => {
-          console.error('Error fetching todos:', err); // Improved error logging.
+          console.error('Error with real-time todos listener:', err);
           setLoading(false);
         },
       );
@@ -147,14 +138,6 @@ const HomeScreen = (): JSX.Element => {
     });
   };
 
-  const removeTodo = async (id: string) => {
-    setLoading(true);
-    await firestore().collection('Todos').doc(id).delete();
-    setLoading(false);
-    ToastAndroid.show('Todo deleted!', ToastAndroid.BOTTOM);
-    getAllTodos();
-  };
-
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
     setDatePickerVisibility(false);
@@ -165,11 +148,15 @@ const HomeScreen = (): JSX.Element => {
   };
 
   const updateDueDate = async (id: string, date: Date) => {
-    await firestore().collection('Todos').doc(id).update({
-      dueDate: date,
-    });
-    ToastAndroid.show('Due date updated!', ToastAndroid.BOTTOM);
-    getAllTodos();
+    try {
+      await firestore().collection('Todos').doc(id).update({
+        dueDate: date,
+      });
+      ToastAndroid.show('Due date updated!', ToastAndroid.BOTTOM);
+      getAllTodos();
+    } catch (error) {
+      console.error('Error updating due date:', error);
+    }
   };
 
   return (
@@ -187,7 +174,9 @@ const HomeScreen = (): JSX.Element => {
                 const newSelectedItems = [...selectedItems];
                 newSelectedItems.splice(ind, 1);
                 setSelectedItems(newSelectedItems);
-              } else setSelectedItems(pre => [...pre, item.id]);
+              } else {
+                setSelectedItems(pre => [...pre, item.id]);
+              }
             }}
             onCheckPress={() => getAllTodos()}
             onEditPress={() => {
@@ -204,23 +193,8 @@ const HomeScreen = (): JSX.Element => {
         onConfirm={handleDateChange}
         onCancel={() => setDatePickerVisibility(false)}
       />
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 10,
-          paddingHorizontal: 10,
-        }}>
-        <Pressable
-          style={{
-            width: 50,
-            height: 50,
-            borderRadius: 25,
-            backgroundColor: 'skyblue',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}>
+      <View style={styles.taskInputContainer}>
+        <Pressable style={styles.micButton}>
           <VectorIcon
             iconName="microphone"
             size={20}
@@ -240,7 +214,7 @@ const HomeScreen = (): JSX.Element => {
           <VectorIcon
             iconName="check"
             size={20}
-            color={true ? 'green' : 'white'}
+            color="green"
             onPress={() => {
               addData({data, deviceId}, () => {
                 setData('');
@@ -264,23 +238,20 @@ const HomeScreen = (): JSX.Element => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f2f6fe',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  todoItem: {
+  taskInputContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 10,
-    marginVertical: 8,
-    backgroundColor: 'white',
-    borderRadius: 5,
-    width: '100%',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 10,
   },
-  todoText: {
-    fontSize: 16,
+  micButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'skyblue',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     color: 'white',
@@ -300,8 +271,5 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  addButtonText: {
-    color: 'white',
   },
 });

@@ -68,21 +68,41 @@ const Card = ({
     scheduleDueDateNotification(item);
   }, []);
 
-  const computeItemStyle = item => {
-    if (!item.dueData) {
-      return {borderLeftColor: 'gray', marginLeft: 10};
+  const computeItemStyle = (item: {dueDate?: {seconds: number} | null}) => {
+    // Check if there's no due date
+    if (!item.dueDate) {
+      return {borderLeftColor: 'gray', marginLeft: 20};
     }
 
-    const isPastDue = item.dueData.seconds < new Date().getTime() / 1000;
-    return {
-      borderLeftColor: isPastDue ? 'red' : 'green',
-      marginLeft: isPastDue ? 5 : 35,
-    };
+    // Check if the due date is past
+    const isPastDue = item.dueDate.seconds < new Date().getTime() / 1000;
+
+    // Apply appropriate styles based on conditions
+    if (isPastDue) {
+      return {
+        borderLeftColor: 'red',
+        marginLeft: 0,
+      };
+    } else {
+      return {
+        borderLeftColor: 'cyan',
+        marginLeft: 40,
+      };
+    }
   };
-  const isPastDue = item.dueData?.seconds < new Date().getTime() / 1000;
 
+  // Example item for testing purposes
+  // const item = {
+  //   dueDate: {
+  //     seconds: Math.floor(new Date().getTime() / 1000) - 1000, // Example past timestamp
+  //   },
+  // };
+
+  // Check if the item is past due (for opacity and background color)
+  const isPastDue = item.dueDate?.seconds < new Date().getTime() / 1000;
+
+  // Compute the item's specific styles
   const itemStyle = computeItemStyle(item);
-
   return (
     <TouchableOpacity
       onLongPress={onLongPress}
@@ -148,7 +168,6 @@ const Card = ({
           justifyContent: 'space-between',
           marginTop: 20,
           borderRadius: 5,
-          borderWidth: 0.2,
         }}>
         <VectorIcon
           iconName={'pencil'}

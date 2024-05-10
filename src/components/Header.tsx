@@ -96,30 +96,27 @@ const Header = ({title}) => {
                 });
               }}
             />
-            <VectorIcon
-              iconName="playlist-add-check"
-              iconPack="MaterialIcons"
-              size={24}
-              color="white"
-              onPress={() => {
-                if (todos.length == selectedItems.length) {
-                  setSelectedItems([]);
-                } else {
-                  const arr = todos.map(({id}) => {
-                    return id;
-                  });
-                  setSelectedItems(arr);
-                }
-              }}
-            />
+            {selectedItems.length > 1 && (
+              <VectorIcon
+                iconName="playlist-add-check"
+                iconPack="MaterialIcons"
+                size={24}
+                color="white"
+                onPress={() => {
+                  if (todos.length == selectedItems.length) {
+                    setSelectedItems([]);
+                  } else {
+                    const arr = todos.map(({id}) => {
+                      return id;
+                    });
+                    setSelectedItems(arr);
+                  }
+                }}
+              />
+            )}
           </>
         )}
-        <VectorIcon
-          iconName="search"
-          size={20}
-          color="white"
-          onPress={() => onDisplayNotification()}
-        />
+
         <VectorIcon
           iconName="search"
           size={20}

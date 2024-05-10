@@ -2,7 +2,17 @@ import {Keyboard} from 'react-native';
 import {toast} from '../utils/utilityFunctions';
 import firestore from '@react-native-firebase/firestore';
 
-export const addData = async (data1, cb) => {
+interface TodoData {
+  id?: string;
+  data: string;
+  descriptions?: string[];
+  deviceId?: string;
+  list?: string;
+  dueDate?: string;
+  completed?: boolean;
+}
+
+export const addData = async (data1: TodoData, cb: () => void) => {
   const {
     data,
     descriptions = [],
@@ -10,10 +20,12 @@ export const addData = async (data1, cb) => {
     list = '',
     dueDate = '',
   } = data1;
-  if (data == '') {
+
+  if (data.trim() === '') {
     toast('Add Task Please');
     return;
   }
+
   try {
     await firestore().collection('Todos').add({
       text: data,
@@ -29,21 +41,29 @@ export const addData = async (data1, cb) => {
     cb();
   } catch (error) {
     toast('Failed to add Task. Try again.');
-    console.error('Error adding document: ', error);
-  } finally {
+    console.error('Error adding document:', error);
   }
 };
 
-export const toggleCompletion = async (data1, cb) => {
+export const toggleCompletion = async (
+  data1: {id: string; completed: boolean},
+  cb: () => void,
+) => {
   const {id, completed} = data1;
-  await firestore().collection('Todos').doc(id).update({
-    completed: !completed,
-  });
-  toast('Todo status updated!');
-  cb();
+
+  try {
+    await firestore().collection('Todos').doc(id).update({
+      completed: !completed,
+    });
+    toast('Todo status updated!');
+    cb();
+  } catch (error) {
+    toast('Error updating Todo status');
+    console.error('Error updating document:', error);
+  }
 };
 
-export const editTodo = async (data1, cb) => {
+export const editTodo = async (data1: TodoData, cb: () => void) => {
   const {
     id,
     data,
@@ -52,6 +72,12 @@ export const editTodo = async (data1, cb) => {
     list = '',
     dueDate = '',
   } = data1;
+
+  if (!id) {
+    toast('Invalid Todo ID');
+    return;
+  }
+
   try {
     await firestore().collection('Todos').doc(id).update({
       text: data,
@@ -66,16 +92,24 @@ export const editTodo = async (data1, cb) => {
     cb();
   } catch (error) {
     toast('Update Failed');
+    console.error('Error updating document:', error);
   }
 };
 
-export const removeTodo = async (data, cb) => {
+export const removeTodo = async (data: string[], cb: () => void) => {
   const batch = firestore().batch();
-  data.forEach(id => {
-    const docRef = firestore().collection('Todos').doc(id);
-    batch.delete(docRef);
-  });
-  await batch.commit();
-  toast('Todos deleted successfully!');
-  cb();
+
+  try {
+    data.forEach(id => {
+      const docRef = firestore().collection('Todos').doc(id);
+      batch.delete(docRef);
+    });
+
+    await batch.commit();
+    toast('Todos deleted successfully!');
+    cb();
+  } catch (error) {
+    toast('Error deleting Todos');
+    console.error('Error deleting documents:', error);
+  }
 };

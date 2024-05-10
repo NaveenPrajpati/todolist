@@ -1,19 +1,20 @@
-import {StyleSheet, Text, View} from 'react-native';
-import React, {Children} from 'react';
+import {StyleSheet, View, ViewStyle} from 'react-native';
+import React, {ReactNode} from 'react';
 
-const Container = ({children}) => {
-  return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: 'black',
-        justifyContent: 'space-between',
-      }}>
-      {children}
-    </View>
-  );
+interface ContainerProps {
+  children: ReactNode; // Defines that children can be any valid React element
+}
+
+const Container: React.FC<ContainerProps> = ({children}) => {
+  return <View style={styles.container}>{children}</View>;
 };
 
 export default Container;
 
-const styles = StyleSheet.create({});
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black',
+    justifyContent: 'space-between',
+  } as ViewStyle,
+});
