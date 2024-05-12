@@ -15,7 +15,6 @@ interface MyContextType {
   setTodos: (items: TodoItem[]) => void;
 }
 
-// Define the type for a single todo item
 interface TodoItem {
   id: string;
   createdAt: Date;
@@ -25,7 +24,6 @@ interface TodoItem {
   deviceId: string;
 }
 
-// Provide a default context value as a placeholder
 const defaultContextValue: MyContextType = {
   deviceId: '',
   setDeviceId: () => {},
@@ -39,7 +37,6 @@ const defaultContextValue: MyContextType = {
   setTodos: () => {},
 };
 
-// Create the context with the specified type
 export const MyContext = createContext<MyContextType>(defaultContextValue);
 
 const App = (): JSX.Element => {
@@ -49,7 +46,6 @@ const App = (): JSX.Element => {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
 
-  // Provide the values in the correct structure
   const values: MyContextType = {
     deviceId,
     setDeviceId,

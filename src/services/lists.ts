@@ -40,9 +40,8 @@ export const getList = async (
       .get();
 
     const fetchedList = listsSnapshot.docs.map(doc => ({
-      ...(doc.data().list as ListItem),
+      ...doc.data().list,
     }));
-
     cb(fetchedList);
   } catch (error) {
     toast('Failed to fetch lists. Please try again.');

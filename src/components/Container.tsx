@@ -1,4 +1,4 @@
-import {StyleSheet, View, ViewStyle} from 'react-native';
+import {KeyboardAvoidingView, StyleSheet, View, ViewStyle} from 'react-native';
 import React, {ReactNode} from 'react';
 
 interface ContainerProps {
@@ -16,5 +16,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
     justifyContent: 'space-between',
-  } as ViewStyle,
+  },
 });

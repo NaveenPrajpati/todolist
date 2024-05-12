@@ -7,6 +7,7 @@ import {
   Text,
   ToastAndroid,
   FlatList,
+  Keyboard,
 } from 'react-native';
 import firestore from '@react-native-firebase/firestore';
 import {useNavigation} from '@react-navigation/native';
@@ -40,6 +41,7 @@ const CreateTodo = ({navigation, route}) => {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
   const [listItem, setListItem] = useState(selectData);
+  const taskRef = useRef(null);
 
   const handleDateChange = (date: Date) => {
     console.log(date);
@@ -64,9 +66,10 @@ const CreateTodo = ({navigation, route}) => {
   };
 
   useEffect(() => {
+    taskRef.current.focus();
     getList(deviceId, e => {
       // console.log(JSON.stringify(e, null, 2));
-      setListItem(pre => [...pre, ...e]);
+      setListItem(pre => [...selectData, ...e]);
     });
     return () => resetData();
   }, []);
@@ -99,7 +102,8 @@ const CreateTodo = ({navigation, route}) => {
               marginBottom: 10,
             }}>
             <TextInput
-              placeholder="Add your Task"
+              ref={taskRef}
+              placeholder="Add Your Task"
               multiline
               onChangeText={setData}
               value={data}
@@ -122,7 +126,7 @@ const CreateTodo = ({navigation, route}) => {
               justifyContent: 'space-between',
               alignItems: 'center',
             }}>
-            <Text style={{color: 'gray', fontSize: 18, fontWeight: '500'}}>
+            <Text style={{color: 'gray', fontSize: 14, fontWeight: '500'}}>
               Task Content
             </Text>
             {descriptions.length != 0 && (
@@ -137,32 +141,33 @@ const CreateTodo = ({navigation, route}) => {
               />
             )}
           </View>
-          <FlatList
-            data={descriptions}
-            renderItem={({item, index}) => (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}>
-                <Text style={{color: 'white', fontSize: 16}}>
-                  {index + 1}
-                  {')'} {item}
-                </Text>
-                <VectorIcon
-                  iconName="delete"
-                  iconPack="AntDesign"
-                  size={18}
-                  color="red"
-                  onPress={() => {
-                    const arr = descriptions.filter(it => it != item);
-                    setDescriptions(arr);
-                  }}
-                />
-              </View>
-            )}
-          />
+
+          {descriptions.map((item, index) => (
+            <View
+              key={index}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginLeft: 10,
+              }}>
+              <Text style={{color: 'white', fontSize: 14}}>
+                {index + 1}
+                {')'} {item}
+              </Text>
+              <VectorIcon
+                iconName="delete"
+                iconPack="AntDesign"
+                size={18}
+                color="red"
+                onPress={() => {
+                  const arr = descriptions.filter(it => it != item);
+                  setDescriptions(arr);
+                }}
+              />
+            </View>
+          ))}
+
           <View
             style={{
               flexDirection: 'row',
@@ -196,7 +201,13 @@ const CreateTodo = ({navigation, route}) => {
 
         {/* list section */}
 
-        <Text style={{color: 'white', fontSize: 20, fontWeight: '500'}}>
+        <Text
+          style={{
+            color: 'white',
+            fontSize: 16,
+            fontWeight: '500',
+            marginTop: 5,
+          }}>
           Add To List
         </Text>
         <View
@@ -229,6 +240,7 @@ const CreateTodo = ({navigation, route}) => {
               flexDirection: 'row',
             }}>
             <TextInput
+              autoFocus
               placeholder="List name"
               multiline
               onChangeText={e => {
@@ -260,7 +272,6 @@ const CreateTodo = ({navigation, route}) => {
                   color="green"
                   onPress={() => {
                     addList({data: newList, deviceId}, () => {
-                      toast('list added');
                       getList(deviceId, e => {
                         setListItem(pre => [...pre, e]);
                       });
@@ -277,7 +288,7 @@ const CreateTodo = ({navigation, route}) => {
         {/* date section */}
         {dueDate && (
           <>
-            <Text style={{color: 'white', fontSize: 20}}>Due Date</Text>
+            <Text style={{color: 'white', fontSize: 16}}>Due Date</Text>
             <View
               style={{
                 backgroundColor: colors.cardbg,
@@ -290,9 +301,11 @@ const CreateTodo = ({navigation, route}) => {
               }}>
               <Text
                 style={{
-                  color: colors.pirmary,
-                  fontSize: 28,
+                  color: colors.cardbg,
+                  fontSize: 24,
                   fontWeight: '800',
+                  backgroundColor: 'orange',
+                  padding: 2,
                 }}>
                 {formatDateTime(dueDate)}
               </Text>
@@ -314,7 +327,10 @@ const CreateTodo = ({navigation, route}) => {
       <View style={{flexDirection: 'row', justifyContent: 'space-around'}}>
         <TouchableOpacity
           style={styles.dateButton}
-          onPress={() => setDatePickerVisibility(true)}>
+          onPress={() => {
+            Keyboard.dismiss();
+            setDatePickerVisibility(true);
+          }}>
           <VectorIcon
             iconName="date-range"
             iconPack="MaterialIcons"
@@ -363,7 +379,7 @@ const styles = StyleSheet.create({
   input: {
     color: 'white',
     fontSize: 18,
-    padding: 20,
+    padding: 10,
     marginVertical: 5,
     borderBottomWidth: 2,
     borderBottomColor: colors.pirmary,

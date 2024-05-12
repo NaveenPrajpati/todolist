@@ -1,6 +1,7 @@
 import {Keyboard} from 'react-native';
 import {toast} from '../utils/utilityFunctions';
 import firestore from '@react-native-firebase/firestore';
+import {onDisplayNotification, scheduleNotification} from './pushNotification';
 
 interface TodoData {
   id?: string;
@@ -37,6 +38,7 @@ export const addData = async (data1: TodoData, cb: () => void) => {
       dueDate: dueDate,
     });
     toast('Todo added!');
+    onDisplayNotification({text: data, dueDate: dueDate});
     Keyboard.dismiss();
     cb();
   } catch (error) {

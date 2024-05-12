@@ -1,21 +1,29 @@
 import React, {useContext, useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Modal} from 'react-native';
 import VectorIcon from './VectorIcon';
-import {colors} from '../utils/styles';
 import {MyContext} from '../../App';
 
 const FilterMenu = () => {
   const [menuVisible, setMenuVisible] = useState(false);
+  const [selectedFilter, setSelectedFilter] = useState(null);
   const {setFilterQuery} = useContext(MyContext);
+
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
+  };
+
+  const selectFilter = item => {
+    setFilterQuery(item);
+    setSelectedFilter(item);
+    setMenuVisible(false); // Automatically closes the menu when an item is selected
   };
 
   const filterData = [
     'all',
     'completed',
-    'upcomming',
+    'upcoming',
     'overdue',
+    'today',
     'No limit',
     'pending',
   ];
@@ -25,57 +33,64 @@ const FilterMenu = () => {
       <TouchableOpacity onPress={toggleMenu} style={styles.button}>
         <VectorIcon iconName="filter" size={20} color="white" />
       </TouchableOpacity>
-      {menuVisible && (
-        <View style={styles.menu}>
-          {filterData.map((item, index) => (
-            <TouchableOpacity
-              onPress={() => setFilterQuery(item)}
-              style={styles.menuItem}>
-              <Text style={styles.menuText}>{item}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
+      <Modal
+        transparent={true}
+        visible={menuVisible}
+        onRequestClose={toggleMenu} // This will handle the hardware back button on Android
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPressOut={toggleMenu}>
+          <View style={styles.menu}>
+            {filterData.map((item, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => selectFilter(item)}
+                style={[
+                  styles.menuItem,
+                  selectedFilter === item && styles.selectedMenuItem,
+                ]}>
+                <Text style={styles.menuText}>{item}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    // alignItems: 'center',
-    // justifyContent: 'center',
+    // Additional styles
   },
   button: {
     padding: 10,
     backgroundColor: 'blue',
     borderRadius: 5,
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
+  modalOverlay: {
+    flex: 1,
+
+    alignItems: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   menu: {
-    position: 'absolute',
-    top: 50,
-    right: 10,
     backgroundColor: 'white',
-    padding: 10,
     borderRadius: 5,
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 2},
-    shadowOpacity: 0.8,
-    shadowRadius: 3,
+    padding: 10,
     elevation: 5,
-    width: 150,
   },
   menuItem: {
     paddingVertical: 10,
     paddingHorizontal: 20,
-    backgroundColor: '',
+  },
+  selectedMenuItem: {
+    backgroundColor: 'lightgray', // Adjust color as needed
   },
   menuText: {
     fontSize: 16,
-    color: 'black',
   },
 });
 

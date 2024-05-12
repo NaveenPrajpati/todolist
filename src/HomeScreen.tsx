@@ -5,7 +5,9 @@ import {
   TextInput,
   View,
   TouchableOpacity,
+  ActivityIndicator,
   ToastAndroid,
+  Text,
   Pressable,
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -14,14 +16,16 @@ import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
 import notifee from '@notifee/react-native';
+
 import {useNavigation} from '@react-navigation/native';
 import VectorIcon from './components/VectorIcon';
 import Card from './components/Card';
 import Container from './components/Container';
-import {getUniqueId} from 'react-native-device-info';
+import {getDeviceId, getUniqueId} from 'react-native-device-info';
 import {MyContext} from '../App';
 import {colors} from './utils/styles';
 import {addData} from './services/todos';
+import ListenVoice from './components/ListenVoice';
 
 interface TodoItem {
   id: string;
@@ -33,13 +37,15 @@ interface TodoItem {
 }
 
 const HomeScreen = (): JSX.Element => {
+  const [editable, setEditable] = useState(false);
+  const [editIndex, setEditIndex] = useState<number | undefined>();
   const [newText, setNewText] = useState('');
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [loading, setLoading] = useState(false);
   const textRef = useRef<TextInput>(null);
   const [data, setData] = useState('');
-
+  const [listenModal, setListenModal] = useState(false);
   const {
     deviceId,
     setDeviceId,
@@ -48,54 +54,39 @@ const HomeScreen = (): JSX.Element => {
     setSelectedItems,
     todos,
     setTodos,
+    filterQuery,
   } = useContext(MyContext);
 
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const getDeviceToken = async () => {
-      await messaging().registerDeviceForRemoteMessages();
-      const token = await messaging().getToken();
-    };
-    getDeviceToken();
-  }, []);
+  // useEffect(() => {
+  //   const getDeviceToken = async () => {
+  //     await messaging().registerDeviceForRemoteMessages();
+  //     const token = await messaging().getToken();
 
-  useEffect(() => {
-    const unsubscribe = messaging().onMessage(async remoteMessage => {
-      await onDisplayNotification(remoteMessage);
-    });
-    return unsubscribe;
-  }, []);
+  //   };
 
-  const getAllTodos = async () => {
-    setLoading(true);
-    try {
-      const todosSnapshot = await firestore()
-        .collection('Todos')
-        .where('deviceId', '==', deviceId)
-        .get();
-      const fetchedTodos = todosSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...(doc.data() as TodoItem),
-      }));
-      setTodos(fetchedTodos);
-    } catch (error) {
-      console.error('Error fetching todos:', error);
-    }
-    setLoading(false);
-  };
+  //   getDeviceToken();
+  // }, []);
+
+  // useEffect(() => {
+  //   const unsubscribe = messaging().onMessage(async remoteMessage => {
+  //     await onDisplayNotification(remoteMessage);
+  //   });
+
+  //   return unsubscribe;
+  // }, []);
 
   useEffect(() => {
     async function getId() {
-      const uniqueId = await getUniqueId();
-      setDeviceId(uniqueId);
+      const idd = await getUniqueId();
+      setDeviceId(idd);
     }
     getId();
   }, []);
 
   useEffect(() => {
     if (!deviceId) return;
-
     const unsubscribe = firestore()
       .collection('Todos')
       .where('deviceId', '==', deviceId)
@@ -105,38 +96,18 @@ const HomeScreen = (): JSX.Element => {
             id: doc.id,
             ...doc.data(),
           }));
+          // console.log('Fetched Todos:', JSON.stringify(todosData, null, 2));
           setTodos(todosData);
           setLoading(false);
         },
         err => {
-          console.error('Error with real-time todos listener:', err);
+          console.error('Error fetching todos:', err); // Improved error logging.
           setLoading(false);
         },
       );
 
     return () => unsubscribe();
   }, [deviceId]);
-
-  const onDisplayNotification = async (
-    data: FirebaseMessagingTypes.RemoteMessage,
-  ) => {
-    await notifee.requestPermission();
-    const channelId = await notifee.createChannel({
-      id: 'default',
-      name: 'Default Channel',
-    });
-
-    await notifee.displayNotification({
-      title: data.notification?.title,
-      body: data.notification?.body,
-      android: {
-        channelId,
-        pressAction: {
-          id: 'default',
-        },
-      },
-    });
-  };
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -148,21 +119,55 @@ const HomeScreen = (): JSX.Element => {
   };
 
   const updateDueDate = async (id: string, date: Date) => {
-    try {
-      await firestore().collection('Todos').doc(id).update({
-        dueDate: date,
-      });
-      ToastAndroid.show('Due date updated!', ToastAndroid.BOTTOM);
-      getAllTodos();
-    } catch (error) {
-      console.error('Error updating due date:', error);
-    }
+    await firestore().collection('Todos').doc(id).update({
+      dueDate: date,
+    });
+    ToastAndroid.show('Due date updated!', ToastAndroid.BOTTOM);
+  };
+
+  const filterTodos = () => {
+    const currentDate = new Date();
+    // currentDate.setHours(0, 0, 0, 0); // Normalize current date to midnight for accurate comparison
+
+    const now = new Date();
+
+    return todos.filter(item => {
+      // Convert timestamp to JavaScript Date object
+      const itemDate = new Date(item.dueDate.seconds * 1000);
+      // itemDate.setHours(0, 0, 0, 0); // Normalize item date
+
+      // Check if the text matches the search query
+      if (!item.text.includes(searchQuery)) {
+        return false;
+      }
+
+      // Filter based on the filterQuery
+      switch (filterQuery) {
+        case 'completed':
+          return item.completed === true;
+        case 'upcoming':
+          return item.dueDate && itemDate > currentDate;
+        case 'overdue':
+          return item.dueDate && itemDate < currentDate;
+        case 'today':
+          return (
+            item.dueDate &&
+            itemDate.toDateString() === new Date().toDateString()
+          ); // Assuming 'No limit' means today
+        case 'No limit':
+          return item.dueDate == '';
+        case 'all':
+          return true; // Return all items if 'all' is selected
+        default:
+          return true; // Default to showing all if no valid filter is selected
+      }
+    });
   };
 
   return (
     <Container>
       <FlatList
-        data={todos.filter(it => it.text.includes(searchQuery))}
+        data={filterTodos()}
         renderItem={({item, index}) => (
           <Card
             item={item}
@@ -174,14 +179,12 @@ const HomeScreen = (): JSX.Element => {
                 const newSelectedItems = [...selectedItems];
                 newSelectedItems.splice(ind, 1);
                 setSelectedItems(newSelectedItems);
-              } else {
-                setSelectedItems(pre => [...pre, item.id]);
-              }
+              } else setSelectedItems(pre => [...pre, item.id]);
             }}
-            onCheckPress={() => getAllTodos()}
             onEditPress={() => {
               navigation.navigate('CreateTodo', {isEdit: true, item});
             }}
+            onCheckPress={() => {}}
           />
         )}
         keyExtractor={item => item.id}
@@ -193,15 +196,32 @@ const HomeScreen = (): JSX.Element => {
         onConfirm={handleDateChange}
         onCancel={() => setDatePickerVisibility(false)}
       />
-      <View style={styles.taskInputContainer}>
-        <Pressable style={styles.micButton}>
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 10,
+          paddingHorizontal: 10,
+        }}>
+        {/* <Pressable
+          style={{
+            width: 50,
+            height: 50,
+            borderRadius: 25,
+            backgroundColor: 'skyblue',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}>
           <VectorIcon
             iconName="microphone"
             size={20}
             color={'white'}
-            onPress={() => {}}
+            onPress={() => {
+              setListenModal(true);
+            }}
           />
-        </Pressable>
+        </Pressable> */}
         <TextInput
           placeholder="Add your Task"
           multiline
@@ -214,11 +234,10 @@ const HomeScreen = (): JSX.Element => {
           <VectorIcon
             iconName="check"
             size={20}
-            color="green"
+            color={true ? 'green' : 'white'}
             onPress={() => {
               addData({data, deviceId}, () => {
                 setData('');
-                getAllTodos();
               });
             }}
           />
@@ -231,6 +250,11 @@ const HomeScreen = (): JSX.Element => {
         }>
         <VectorIcon iconName="plus" size={24} color="white" />
       </TouchableOpacity>
+      <ListenVoice
+        onPress={undefined}
+        visible={listenModal}
+        setVisible={setListenModal}
+      />
     </Container>
   );
 };
@@ -238,20 +262,23 @@ const HomeScreen = (): JSX.Element => {
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  taskInputContainer: {
+  container: {
+    flex: 1,
+    backgroundColor: '#f2f6fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  todoItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    paddingHorizontal: 10,
+    padding: 10,
+    marginVertical: 8,
+    backgroundColor: 'white',
+    borderRadius: 5,
+    width: '100%',
   },
-  micButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'skyblue',
-    justifyContent: 'center',
-    alignItems: 'center',
+  todoText: {
+    fontSize: 16,
   },
   input: {
     color: 'white',
@@ -271,5 +298,8 @@ const styles = StyleSheet.create({
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  addButtonText: {
+    color: 'white',
   },
 });

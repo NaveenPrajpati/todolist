@@ -12,17 +12,23 @@ import notifee, {EventType} from '@notifee/react-native';
 const Stack = createNativeStackNavigator();
 
 function Routes() {
+  // React.useEffect(() => {
+  //   return notifee.onForegroundEvent(({type, detail}) => {
+  //     switch (type) {
+  //       case EventType.DISMISSED:
+  //         console.log('User dismissed notification', detail.notification);
+  //         break;
+  //       case EventType.PRESS:
+  //         console.log('User pressed notification', detail.notification);
+  //         break;
+  //     }
+  //   });
+  // }, []);
+  async function requestper() {
+    await notifee.requestPermission();
+  }
   React.useEffect(() => {
-    return notifee.onForegroundEvent(({type, detail}) => {
-      switch (type) {
-        case EventType.DISMISSED:
-          console.log('User dismissed notification', detail.notification);
-          break;
-        case EventType.PRESS:
-          console.log('User pressed notification', detail.notification);
-          break;
-      }
-    });
+    requestper();
   }, []);
   return (
     <NavigationContainer>
@@ -36,8 +42,16 @@ function Routes() {
             return <Header title={title} />;
           },
         }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="CreateTodo" component={CreateTodo} />
+        <Stack.Screen
+          name="Home"
+          options={{headerTitle: 'My Todos'}}
+          component={HomeScreen}
+        />
+        <Stack.Screen
+          name="CreateTodo"
+          options={{headerTitle: 'Add Task Details'}}
+          component={CreateTodo}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

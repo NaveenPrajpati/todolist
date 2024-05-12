@@ -74,6 +74,7 @@ const Header = ({title}) => {
           <TextInput
             placeholder="Search here"
             multiline
+            autoFocus
             onChangeText={setSearchQuery}
             value={searchQuery}
             style={[styles.input, {width: '50%'}]}

@@ -40,34 +40,6 @@ const Card = ({
     }
   }
 
-  // Schedule a notification for a specific due date
-  async function scheduleDueDateNotification(task) {
-    const dueDate = new Date(task.dueDate.seconds * 1000);
-
-    const trigger: TimestampTrigger = {
-      type: TriggerType.TIMESTAMP,
-      timestamp: dueDate.getTime(),
-    };
-
-    await notifee.createTriggerNotification(
-      {
-        id: task.id.toString(),
-        title: 'Task Notification',
-        body: task.text.substring(0, 50),
-        android: {
-          channelId: 'default',
-          importance: 4,
-          sound: 'default',
-        },
-      },
-      trigger,
-    );
-  }
-
-  useEffect(() => {
-    scheduleDueDateNotification(item);
-  }, []);
-
   const computeItemStyle = (item: {dueDate?: {seconds: number} | null}) => {
     // Check if there's no due date
     if (!item.dueDate) {
@@ -113,6 +85,7 @@ const Card = ({
           opacity: isPastDue ? 0.5 : 1,
           backgroundColor: isPastDue ? 'red' : colors.cardbg,
         },
+        {width: item.completed ? '90%' : '70%'},
       ]}>
       <View
         style={{
@@ -190,7 +163,7 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#222222',
     borderRadius: 10,
-    padding: 10,
+    padding: 5,
     // alignItems: 'center',
     // justifyContent: 'space-evenly',
     width: screenW * 0.6,
