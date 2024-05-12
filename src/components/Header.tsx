@@ -97,7 +97,7 @@ const Header = ({title}) => {
                 });
               }}
             />
-            {selectedItems.length > 1 && (
+            {selectedItems.length > 0 && (
               <VectorIcon
                 iconName="playlist-add-check"
                 iconPack="MaterialIcons"

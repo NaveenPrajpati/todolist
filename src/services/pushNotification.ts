@@ -42,10 +42,21 @@ export async function onDisplayNotification(task) {
     await notifee.createTriggerNotification(
       {
         title: 'Reminder',
+
         body: `Your task '${task.text}' is due soon!`,
         android: {
           channelId,
           sound: 'ring1', // Custom sound specified
+          actions: [
+            {
+              title: '<b>Dance</b> &#128111;',
+              pressAction: {id: 'edit'},
+            },
+            {
+              title: 'stop',
+              pressAction: {id: 'stop'},
+            },
+          ],
         },
       },
       trigger1,
@@ -59,6 +70,19 @@ export async function onDisplayNotification(task) {
       android: {
         channelId,
         sound: 'ring1', // Custom sound specified
+        actions: [
+          {
+            title: '<b>Dance</b> &#128111;',
+            pressAction: {id: 'completed'},
+          },
+          {
+            title: 'stop',
+            pressAction: {id: 'stop'},
+          },
+        ],
+        pressAction: {
+          id: 'default',
+        },
       },
     },
     trigger2,

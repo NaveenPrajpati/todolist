@@ -15,7 +15,7 @@ import firestore from '@react-native-firebase/firestore';
 import messaging, {
   FirebaseMessagingTypes,
 } from '@react-native-firebase/messaging';
-import notifee from '@notifee/react-native';
+import notifee, {EventType} from '@notifee/react-native';
 
 import {useNavigation} from '@react-navigation/native';
 import VectorIcon from './components/VectorIcon';
@@ -26,6 +26,7 @@ import {MyContext} from '../App';
 import {colors} from './utils/styles';
 import {addData} from './services/todos';
 import ListenVoice from './components/ListenVoice';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TodoItem {
   id: string;
@@ -76,6 +77,42 @@ const HomeScreen = (): JSX.Element => {
 
   //   return unsubscribe;
   // }, []);
+
+  useEffect(() => {
+    const checkForNavigationIntent = async () => {
+      const actionId = await AsyncStorage.getItem('NAVIGATION_INTENT');
+      if (actionId) {
+        // Assuming 'view_messages' should navigate to 'MessageScreen'
+        if (actionId === 'stop') {
+          // navigation.navigate('MessageScreen');
+          console.log('back stop press');
+        }
+        // Clear the intent from storage after handling
+        await AsyncStorage.removeItem('NAVIGATION_INTENT');
+      }
+    };
+
+    checkForNavigationIntent();
+
+    const unsubscribe = notifee.onForegroundEvent(({type, detail}) => {
+      switch (type) {
+        case EventType.ACTION_PRESS:
+          if (detail.pressAction.id === 'stop') {
+            // navigation.navigate('MessageScreen');
+            console.log('stop press notify');
+          }
+          break;
+        case EventType.DISMISSED:
+          console.log('User dismissed notification', detail.notification);
+          break;
+        case EventType.PRESS:
+          console.log('User pressed notification', detail.pressAction?.id);
+          break;
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   useEffect(() => {
     async function getId() {
@@ -250,11 +287,11 @@ const HomeScreen = (): JSX.Element => {
         }>
         <VectorIcon iconName="plus" size={24} color="white" />
       </TouchableOpacity>
-      <ListenVoice
+      {/* <ListenVoice
         onPress={undefined}
         visible={listenModal}
         setVisible={setListenModal}
-      />
+      /> */}
     </Container>
   );
 };

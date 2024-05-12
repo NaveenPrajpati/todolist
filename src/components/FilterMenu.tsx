@@ -91,6 +91,7 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: 16,
+    color: 'black',
   },
 });
 

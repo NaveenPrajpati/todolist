@@ -1,8 +1,8 @@
 // In App.js in a new project
 
-import * as React from 'react';
+import React, {useEffect} from 'react';
 import {View, Text} from 'react-native';
-import {NavigationContainer} from '@react-navigation/native';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
 import CreateTodo from './pages/CreateTodo';
@@ -24,6 +24,20 @@ function Routes() {
   //     }
   //   });
   // }, []);
+
+  notifee.onBackgroundEvent(async ({type, detail}) => {
+    if (type === EventType.ACTION_PRESS) {
+      if (detail.pressAction.id === 'stop') {
+        // Handle background navigation or other logic here
+        console.log(
+          'Notification action received in background: ',
+          detail.pressAction.id,
+        );
+        // You might store this event or handle it according to your app's logic
+      }
+    }
+  });
+
   async function requestper() {
     await notifee.requestPermission();
   }

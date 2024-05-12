@@ -15,12 +15,12 @@ import Container from '../components/Container';
 import {colors} from '../utils/styles';
 import VectorIcon from '../components/VectorIcon';
 import SelectTag from '../components/Dropdown';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import {MyContext} from '../../App';
 import {formatDateTime, selectData, toast} from '../utils/utilityFunctions';
 import {addList, getList} from '../services/lists';
 import moment from 'moment';
 import {addData, editTodo} from '../services/todos';
+import DatePicker from 'react-native-date-picker';
 
 const CreateTodo = ({navigation, route}) => {
   const {isEdit = false, item} = route.params;
@@ -312,7 +312,7 @@ const CreateTodo = ({navigation, route}) => {
             </View>
           </>
         )}
-        <DateTimePickerModal
+        {/* <DateTimePickerModal
           textColor="pink"
           isDarkModeEnabled={true}
           minimumDate={new Date()}
@@ -321,6 +321,15 @@ const CreateTodo = ({navigation, route}) => {
           onConfirm={handleDateChange}
           onCancel={() => setDatePickerVisibility(false)}
           style={{backgroundColor: colors.pirmary}}
+        /> */}
+
+        <DatePicker
+          modal
+          mode="datetime"
+          open={isDatePickerVisible}
+          date={new Date()}
+          onConfirm={handleDateChange}
+          onCancel={() => setDatePickerVisibility(false)}
         />
       </View>
 
