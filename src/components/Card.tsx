@@ -23,8 +23,8 @@ const Card = ({
     const today = moment().startOf('day');
     const tomorrow = moment().add(1, 'days').startOf('day');
 
-    // Convert the UNIX timestamp to a Moment object
-    const date = moment.unix(time.seconds);
+    // Convert the UNIX timestamp to a Moment object  or Convert the ISO 8601 date string to a Moment object
+    const date = time.seconds ? moment.unix(time.seconds) : moment(time);
 
     // Check if the date is today
     if (date.isSame(today, 'day')) {
@@ -62,13 +62,6 @@ const Card = ({
       };
     }
   };
-
-  // Example item for testing purposes
-  // const item = {
-  //   dueDate: {
-  //     seconds: Math.floor(new Date().getTime() / 1000) - 1000, // Example past timestamp
-  //   },
-  // };
 
   // Check if the item is past due (for opacity and background color)
   const isPastDue = item.dueDate?.seconds < new Date().getTime() / 1000;

@@ -27,6 +27,7 @@ import {colors} from './utils/styles';
 import {addData} from './services/todos';
 import ListenVoice from './components/ListenVoice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {fetch} from '@react-native-community/netinfo';
 
 interface TodoItem {
   id: string;
@@ -122,29 +123,69 @@ const HomeScreen = (): JSX.Element => {
     getId();
   }, []);
 
-  useEffect(() => {
-    if (!deviceId) return;
-    const unsubscribe = firestore()
-      .collection('Todos')
-      .where('deviceId', '==', deviceId)
-      .onSnapshot(
-        snapshot => {
-          const todosData = snapshot.docs.map(doc => ({
+  const fetchData = async () => {
+    setLoading(true);
+    const connection = await fetch();
+
+    if (connection.isConnected) {
+      // Device is online, fetch only from Firestore
+      const unsubscribe = firestore()
+        .collection('Todos')
+        .where('deviceId', '==', deviceId)
+        .onSnapshot(
+          async snapshot => {
+            const todosData = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+            }));
+            setTodos(todosData);
+            setLoading(false);
+          },
+          err => {
+            console.error('Error fetching todos:', err);
+            setLoading(false);
+          },
+        );
+
+      return () => unsubscribe();
+    } else {
+      // Device is offline, fetch from Firestore cache and AsyncStorage
+      const snapshotPromise = firestore()
+        .collection('Todos')
+        .where('deviceId', '==', deviceId)
+        .get({source: 'cache'}); // Ensures data comes from Firestore cache
+
+      const storagePromise = AsyncStorage.getItem('offlineTodos');
+
+      Promise.all([snapshotPromise, storagePromise])
+        .then(([snapshot, storedTodos]) => {
+          let todosData = snapshot.docs.map(doc => ({
             id: doc.id,
             ...doc.data(),
           }));
-          // console.log('Fetched Todos:', JSON.stringify(todosData, null, 2));
+
+          if (storedTodos) {
+            const additionalTodos = JSON.parse(storedTodos);
+            todosData = todosData.concat(additionalTodos);
+          }
+
+          console.log(todosData);
+
           setTodos(todosData);
           setLoading(false);
-        },
-        err => {
-          console.error('Error fetching todos:', err); // Improved error logging.
+        })
+        .catch(err => {
+          console.error('Error fetching offline data:', err);
           setLoading(false);
-        },
-      );
+        });
+    }
+  };
 
-    return () => unsubscribe();
-  }, [deviceId]);
+  useEffect(() => {
+    if (!deviceId) return;
+
+    fetchData();
+  }, [deviceId, setTodos, setLoading]);
 
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
@@ -224,7 +265,7 @@ const HomeScreen = (): JSX.Element => {
             onCheckPress={() => {}}
           />
         )}
-        keyExtractor={item => item.id}
+        keyExtractor={(item, index) => item.id || index.toString()}
       />
 
       <DateTimePickerModal

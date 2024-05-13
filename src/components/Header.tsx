@@ -1,18 +1,22 @@
 import {useNavigation, useNavigationState} from '@react-navigation/native';
-import React, {useContext, useState} from 'react';
+import React, {useContext, useEffect, useState} from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Pressable,
 } from 'react-native';
 import VectorIcon from './VectorIcon';
 import {MyContext} from '../../App';
 import {colors} from '../utils/styles';
 import FilterMenu from './FilterMenu';
-import {removeTodo} from '../services/todos';
+import {removeTodo, syncData} from '../services/todos';
 import notifee from '@notifee/react-native';
+import {useNetInfo} from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import useFetchTodos from '../hook/useFecthTodos';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
@@ -24,36 +28,28 @@ const Header = ({title}) => {
     selectedItems,
     setSelectedItems,
     todos,
+    deviceId,
     setTodos,
+    setLoading,
   } = useContext(MyContext);
 
-  // Function to handle back press
   const onBackPress = () => {
     navigation.goBack();
   };
 
-  async function onDisplayNotification() {
-    // Request permissions (required for iOS)
-    await notifee.requestPermission();
+  const fetchTodos = useFetchTodos(deviceId, setTodos, setLoading);
+  const {type, isConnected} = useNetInfo();
 
-    // Create a channel (required for Android)
-    const channelId = await notifee.createChannel({
-      id: 'default',
-      name: 'Default Channel',
-    });
+  const [hasLocalData, setHasLocalData] = useState(false);
 
-    // Display a notification
-    await notifee.displayNotification({
-      title: 'Notification Title',
-      body: 'Main body content of the notification',
-      android: {
-        channelId,
-        pressAction: {
-          id: 'default',
-        },
-      },
-    });
-  }
+  useEffect(() => {
+    const checkLocalData = async () => {
+      const localData = await AsyncStorage.getItem('offlineTodos');
+      setHasLocalData(!!localData);
+    };
+
+    checkLocalData();
+  }, []);
 
   const showBackButton = state.index > 0;
   return (
@@ -124,6 +120,23 @@ const Header = ({title}) => {
           color="white"
           onPress={() => setShowSearch(pre => !pre)}
         />
+
+        {isConnected && hasLocalData && (
+          <Pressable
+            onPress={() =>
+              syncData(() => {
+                fetchTodos();
+              })
+            }>
+            <VectorIcon
+              iconName="check"
+              size={20}
+              color="white"
+              onPress={() => {}}
+            />
+            <Text>sync</Text>
+          </Pressable>
+        )}
         <FilterMenu />
       </View>
     </View>

@@ -5,6 +5,8 @@ import Routes from './src/Routes';
 interface MyContextType {
   deviceId: string;
   setDeviceId: (id: string) => void;
+  loading: boolean;
+  setLoading: (id: boolean) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   filterQuery: string;
@@ -22,6 +24,7 @@ interface TodoItem {
   text: string;
   dueDate: Date;
   deviceId: string;
+  loading: boolean;
 }
 
 const defaultContextValue: MyContextType = {
@@ -35,6 +38,8 @@ const defaultContextValue: MyContextType = {
   setSelectedItems: () => {},
   todos: [],
   setTodos: () => {},
+  loading: false,
+  setLoading: () => {},
 };
 
 export const MyContext = createContext<MyContextType>(defaultContextValue);
@@ -45,6 +50,7 @@ const App = (): JSX.Element => {
   const [filterQuery, setFilterQuery] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [todos, setTodos] = useState<TodoItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const values: MyContextType = {
     deviceId,
@@ -57,6 +63,8 @@ const App = (): JSX.Element => {
     setSelectedItems,
     todos,
     setTodos,
+    loading,
+    setLoading,
   };
 
   return (
