@@ -10,6 +10,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import Entypo from 'react-native-vector-icons/Entypo';
 import EvilIcons from 'react-native-vector-icons/EvilIcons';
 import Feather from 'react-native-vector-icons/Feather';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Define a type for the supported icon sets
 type IconSet =
@@ -20,6 +21,7 @@ type IconSet =
   | 'AntDesign'
   | 'EvilIcons'
   | 'FontAwesome5'
+  | 'MaterialCommunityIcons'
   | 'Entypo'; // ... add other icon sets here
 
 // Define a type for the icon component props
@@ -42,6 +44,7 @@ const IconSets: Record<IconSet, React.ComponentType<any>> = {
   EvilIcons,
   Feather,
   FontAwesome5,
+  MaterialCommunityIcons,
 };
 
 const VectorIcon: React.FC<IconComponentProps> = ({

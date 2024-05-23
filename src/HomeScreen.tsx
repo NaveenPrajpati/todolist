@@ -169,7 +169,7 @@ const HomeScreen = (): JSX.Element => {
             todosData = todosData.concat(additionalTodos);
           }
 
-          console.log(todosData);
+          // console.log(todosData);
 
           setTodos(todosData);
           setLoading(false);
@@ -211,11 +211,13 @@ const HomeScreen = (): JSX.Element => {
 
     return todos.filter(item => {
       // Convert timestamp to JavaScript Date object
-      const itemDate = new Date(item.dueDate.seconds * 1000);
+      const itemDate = new Date(
+        item.dueDate?.seconds ? item.dueDate?.seconds * 1000 : item.dueDate,
+      );
       // itemDate.setHours(0, 0, 0, 0); // Normalize item date
 
       // Check if the text matches the search query
-      if (!item.text.includes(searchQuery)) {
+      if (!item.text?.includes(searchQuery)) {
         return false;
       }
 
@@ -316,6 +318,7 @@ const HomeScreen = (): JSX.Element => {
             onPress={() => {
               addData({data, deviceId}, () => {
                 setData('');
+                fetchData();
               });
             }}
           />

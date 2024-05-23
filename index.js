@@ -9,6 +9,8 @@ import firestore from '@react-native-firebase/firestore';
 import {name as appName} from './app.json';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import 'react-native-gesture-handler';
+
 firestore().settings({
   persistence: true,
 });

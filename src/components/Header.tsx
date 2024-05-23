@@ -120,21 +120,21 @@ const Header = ({title}) => {
           color="white"
           onPress={() => setShowSearch(pre => !pre)}
         />
-
         {isConnected && hasLocalData && (
-          <Pressable
-            onPress={() =>
-              syncData(() => {
-                fetchTodos();
-              })
-            }>
+          <Pressable onPress={() => {}}>
             <VectorIcon
-              iconName="check"
-              size={20}
+              iconName="web-sync"
+              iconPack="MaterialCommunityIcons"
+              size={24}
               color="white"
-              onPress={() => {}}
+              onPress={() => {
+                console.log('working..');
+
+                syncData(() => {
+                  fetchTodos();
+                });
+              }}
             />
-            <Text>sync</Text>
           </Pressable>
         )}
         <FilterMenu />

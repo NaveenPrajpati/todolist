@@ -1,5 +1,11 @@
 import React, {createContext, useState, ReactNode} from 'react';
 import Routes from './src/Routes';
+import {GestureHandlerRootView} from 'react-native-gesture-handler';
+import SpInAppUpdates, {
+  NeedsUpdateResponse,
+  IAUUpdateKind,
+  StartUpdateOptions,
+} from 'sp-react-native-in-app-updates';
 
 // Define the type for the context values
 interface MyContextType {
@@ -68,9 +74,11 @@ const App = (): JSX.Element => {
   };
 
   return (
-    <MyContext.Provider value={values}>
-      <Routes />
-    </MyContext.Provider>
+    <GestureHandlerRootView>
+      <MyContext.Provider value={values}>
+        <Routes />
+      </MyContext.Provider>
+    </GestureHandlerRootView>
   );
 };
 
