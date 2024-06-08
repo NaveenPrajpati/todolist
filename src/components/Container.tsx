@@ -14,6 +14,7 @@ export default Container;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 5,
     backgroundColor: 'black',
     justifyContent: 'space-between',
   },

@@ -17,6 +17,8 @@ import notifee from '@notifee/react-native';
 import {useNetInfo} from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useFetchTodos from '../hook/useFecthTodos';
+import {deleteTask} from '../services/CRUD';
+import {useRealm} from '@realm/react';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
@@ -33,11 +35,13 @@ const Header = ({title}) => {
     setLoading,
   } = useContext(MyContext);
 
+  const realm = useRealm();
+
   const onBackPress = () => {
     navigation.goBack();
   };
 
-  const fetchTodos = useFetchTodos(deviceId, setTodos, setLoading);
+  // const fetchTodos = useFetchTodos(deviceId, setTodos, setLoading);
   const {type, isConnected} = useNetInfo();
 
   const [hasLocalData, setHasLocalData] = useState(false);
@@ -50,6 +54,10 @@ const Header = ({title}) => {
 
     checkLocalData();
   }, []);
+
+  const handleDeleteTask = taskId => {
+    deleteTask(realm, taskId);
+  };
 
   const showBackButton = state.index > 0;
   return (
@@ -79,7 +87,7 @@ const Header = ({title}) => {
         )}
       </View>
       <View style={{flexDirection: 'row', alignItems: 'center', gap: 20}}>
-        {selectedItems.length != 0 && (
+        {selectedItems.size != 0 && (
           <>
             <VectorIcon
               iconName="delete"
@@ -93,21 +101,20 @@ const Header = ({title}) => {
                 });
               }}
             />
-            {selectedItems.length > 0 && (
+            {selectedItems.size > 0 && (
               <VectorIcon
                 iconName="playlist-add-check"
                 iconPack="MaterialIcons"
                 size={24}
                 color="white"
                 onPress={() => {
-                  if (todos.length == selectedItems.length) {
-                    setSelectedItems([]);
-                  } else {
-                    const arr = todos.map(({id}) => {
-                      return id;
-                    });
-                    setSelectedItems(arr);
-                  }
+                  setSelectedItems(prevSelectedItems => {
+                    if (todos.length === prevSelectedItems.size) {
+                      return new Set(); // Clear selection if all are selected
+                    } else {
+                      return new Set(todos.map(todo => todo._id)); // Select all todo IDs
+                    }
+                  });
                 }}
               />
             )}
@@ -131,7 +138,7 @@ const Header = ({title}) => {
                 console.log('working..');
 
                 syncData(() => {
-                  fetchTodos();
+                  // fetchTodos();
                 });
               }}
             />

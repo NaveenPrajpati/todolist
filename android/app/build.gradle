@@ -74,13 +74,13 @@ android {
 
     compileSdkVersion rootProject.ext.compileSdkVersion
 
-    namespace "com.todolist"
+    namespace "com.todotasks"
     defaultConfig {
-        applicationId "com.todolist"
+        applicationId "com.todotasks"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 4
+        versionName "1.3"
     }
     signingConfigs {
         debug {

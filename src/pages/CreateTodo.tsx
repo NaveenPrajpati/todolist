@@ -21,12 +21,16 @@ import {addList, getList} from '../services/lists';
 import moment from 'moment';
 import {addData, editTodo} from '../services/todos';
 import DatePicker from 'react-native-date-picker';
+import {createTask} from '../services/CRUD';
+import {useQuery, useRealm} from '@realm/react';
+import {Task} from '../models/task';
 
 const CreateTodo = ({navigation, route}) => {
   const {isEdit = false, item} = route.params;
-  const [data, setData] = useState(isEdit ? item.text : '');
+  const [data, setData] = useState(isEdit ? item.name : '');
   const [loading, setLoading] = useState(false);
   const [showCreateList, setShowCreateList] = useState(false);
+  const [category, setCategory] = useState('');
   const [newList, setNewList] = useState('');
   const [list, setLIst] = useState(
     isEdit ? {label: item.lists, value: item.lists} : '',
@@ -43,6 +47,9 @@ const CreateTodo = ({navigation, route}) => {
   const [listItem, setListItem] = useState(selectData);
   const taskRef = useRef(null);
 
+  const realm = useRealm();
+  const taskList = useQuery(Task);
+
   const handleDateChange = (date: Date) => {
     console.log(date);
     setDueDate(date);
@@ -55,24 +62,39 @@ const CreateTodo = ({navigation, route}) => {
     setDescriptions([]);
     setData('');
     setDueDate('');
-    setLIst([]);
+    setCategory('');
   }
 
   const addDataTodo = async () => {
-    addData({data, descriptions, deviceId, list, dueDate}, () => {
-      resetData();
-      navigation.goBack();
-    });
+    // addData({data, descriptions, deviceId, list, dueDate}, () => {
+    //   resetData();
+    //   navigation.goBack();
+    // });
+
+    createTask(
+      realm,
+      {
+        name: data,
+        descriptions,
+        deviceId,
+        category,
+        dueDate,
+        completed: false,
+      },
+      () => {
+        resetData();
+      },
+    );
   };
 
-  useEffect(() => {
-    taskRef.current.focus();
-    getList(deviceId, e => {
-      // console.log(JSON.stringify(e, null, 2));
-      setListItem(pre => [...selectData, ...e]);
-    });
-    return () => resetData();
-  }, []);
+  // useEffect(() => {
+  //   taskRef.current.focus();
+  //   getList(deviceId, e => {
+  //     // console.log(JSON.stringify(e, null, 2));
+  //     setListItem(pre => [...selectData, ...e]);
+  //   });
+  //   return () => resetData();
+  // }, []);
 
   function updateData(id) {
     editTodo({id, data, deviceId, list, descriptions, dueDate}, () => {
@@ -228,7 +250,8 @@ const CreateTodo = ({navigation, route}) => {
           <SelectTag
             data={listItem}
             onChange={({value}) => {
-              setLIst(value);
+              // console.log(value);
+              setCategory(value);
             }}
             renderLeftIcon={() => null}
             value={list?.value}

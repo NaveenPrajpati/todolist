@@ -28,6 +28,9 @@ import {addData} from './services/todos';
 import ListenVoice from './components/ListenVoice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {fetch} from '@react-native-community/netinfo';
+import {useQuery, useRealm} from '@realm/react';
+import {Task} from './models/task';
+import {createTask, updateTask} from './services/CRUD';
 
 interface TodoItem {
   id: string;
@@ -46,20 +49,21 @@ const HomeScreen = (): JSX.Element => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const [loading, setLoading] = useState(false);
   const textRef = useRef<TextInput>(null);
-  const [data, setData] = useState('');
+  const [name, setName] = useState('');
   const [listenModal, setListenModal] = useState(false);
+
   const {
     deviceId,
     setDeviceId,
     searchQuery,
     selectedItems,
     setSelectedItems,
-    todos,
     setTodos,
     filterQuery,
   } = useContext(MyContext);
 
   const navigation = useNavigation();
+  const realm = useRealm();
 
   // useEffect(() => {
   //   const getDeviceToken = async () => {
@@ -181,10 +185,15 @@ const HomeScreen = (): JSX.Element => {
     }
   };
 
+  const todos = useQuery(Task);
+
   useEffect(() => {
     if (!deviceId) return;
 
-    fetchData();
+    console.log(JSON.stringify(todos, null, 2));
+    // setTodos(taskList);
+
+    // fetchData();
   }, [deviceId, setTodos, setLoading]);
 
   const handleDateChange = (date: Date) => {
@@ -205,19 +214,13 @@ const HomeScreen = (): JSX.Element => {
 
   const filterTodos = () => {
     const currentDate = new Date();
-    // currentDate.setHours(0, 0, 0, 0); // Normalize current date to midnight for accurate comparison
-
-    const now = new Date();
 
     return todos.filter(item => {
       // Convert timestamp to JavaScript Date object
-      const itemDate = new Date(
-        item.dueDate?.seconds ? item.dueDate?.seconds * 1000 : item.dueDate,
-      );
-      // itemDate.setHours(0, 0, 0, 0); // Normalize item date
+      const itemDate = new Date(item.dueDate);
 
-      // Check if the text matches the search query
-      if (!item.text?.includes(searchQuery)) {
+      // Check if the name matches the search query
+      if (!item.name?.includes(searchQuery)) {
         return false;
       }
 
@@ -233,9 +236,9 @@ const HomeScreen = (): JSX.Element => {
           return (
             item.dueDate &&
             itemDate.toDateString() === new Date().toDateString()
-          ); // Assuming 'No limit' means today
+          );
         case 'No limit':
-          return item.dueDate == '';
+          return item.dueDate == null || item.dueDate === '';
         case 'all':
           return true; // Return all items if 'all' is selected
         default:
@@ -244,6 +247,8 @@ const HomeScreen = (): JSX.Element => {
     });
   };
 
+  console.log(selectedItems);
+
   return (
     <Container>
       <FlatList
@@ -251,20 +256,26 @@ const HomeScreen = (): JSX.Element => {
         renderItem={({item, index}) => (
           <Card
             item={item}
+            isSelected={selectedItems.has(item._id)}
             selectedItems={selectedItems}
             onLongPress={() => {}}
             onSelectPress={() => {
-              const ind = selectedItems.indexOf(item.id);
-              if (ind >= 0) {
-                const newSelectedItems = [...selectedItems];
-                newSelectedItems.splice(ind, 1);
-                setSelectedItems(newSelectedItems);
-              } else setSelectedItems(pre => [...pre, item.id]);
+              setSelectedItems(prevSelectedItems => {
+                const updatedItems = new Set(prevSelectedItems);
+                if (updatedItems.has(item._id)) {
+                  updatedItems.delete(item._id);
+                } else {
+                  updatedItems.add(item._id);
+                }
+                return updatedItems;
+              });
             }}
-            onEditPress={() => {
+            onPress={() => {
               navigation.navigate('CreateTodo', {isEdit: true, item});
             }}
-            onCheckPress={() => {}}
+            onCheckPress={() => {
+              updateTask(realm, item._id, {completed: !item.completed});
+            }}
           />
         )}
         keyExtractor={(item, index) => item.id || index.toString()}
@@ -305,21 +316,27 @@ const HomeScreen = (): JSX.Element => {
         <TextInput
           placeholder="Add your Task"
           multiline
-          onChangeText={setData}
-          value={data}
+          onChangeText={setName}
+          value={name}
           style={[styles.input, {width: '80%'}]}
           placeholderTextColor={'white'}
         />
-        {data && (
+        {name && (
           <VectorIcon
             iconName="check"
             size={20}
             color={true ? 'green' : 'white'}
             onPress={() => {
-              addData({data, deviceId}, () => {
-                setData('');
-                fetchData();
-              });
+              createTask(
+                realm,
+                {
+                  name,
+                  deviceId,
+                },
+                () => {
+                  setName('');
+                },
+              );
             }}
           />
         )}

@@ -8,11 +8,15 @@ import notifee, {TimestampTrigger, TriggerType} from '@notifee/react-native';
 
 interface FormatDateTimeProps {
   dateTimeString: string;
+  onCheckPress: () => void;
+  onPress: () => void;
 }
 
 const Card = ({
   item,
   onCheckPress,
+  onPress,
+  isSelected,
   onLongPress,
   onSelectPress,
   selectedItems,
@@ -68,9 +72,11 @@ const Card = ({
 
   // Compute the item's specific styles
   const itemStyle = computeItemStyle(item);
+
   return (
     <TouchableOpacity
       onLongPress={onLongPress}
+      onPress={onPress}
       style={[
         styles.container,
         itemStyle,
@@ -78,7 +84,7 @@ const Card = ({
           opacity: isPastDue ? 0.5 : 1,
           backgroundColor: isPastDue ? 'red' : colors.cardbg,
         },
-        {width: item.completed ? '90%' : '70%'},
+        {width: item.completed ? '88%' : '70%'},
       ]}>
       <View
         style={{
@@ -89,9 +95,7 @@ const Card = ({
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 5}}>
           <VectorIcon
             iconName={
-              selectedItems.includes(item.id)
-                ? 'radio-button-checked'
-                : 'radio-button-unchecked'
+              isSelected ? 'radio-button-checked' : 'radio-button-unchecked'
             }
             iconPack="MaterialIcons"
             size={20}
@@ -107,15 +111,10 @@ const Card = ({
           iconPack="Ionicons"
           size={20}
           color="white"
-          onPress={() => {
-            toggleCompletion(
-              {id: item.id, completed: item.completed},
-              onCheckPress,
-            );
-          }}
+          onPress={onCheckPress}
         />
       </View>
-      <Text style={styles.currentValue}>{item.text}</Text>
+      <Text style={styles.currentValue}>{item.name}</Text>
 
       {item?.descriptions.length != 0 && (
         <View style={{marginLeft: 20}}>
@@ -131,17 +130,16 @@ const Card = ({
       <View
         style={{
           flexDirection: 'row',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           marginTop: 20,
           borderRadius: 5,
         }}>
-        <VectorIcon
+        {/* <VectorIcon
           iconName={'pencil'}
-          // iconPack="Ionicons"
           size={20}
           color="white"
           onPress={onEditPress}
-        />
+        /> */}
         {item.dueDate && (
           <Text style={[styles.target, {color: isPastDue ? 'red' : 'cyan'}]}>
             {formatedDate(item.dueDate)}

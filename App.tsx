@@ -54,7 +54,7 @@ const App = (): JSX.Element => {
   const [deviceId, setDeviceId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [selectedItems, setSelectedItems] = useState(new Set());
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -72,6 +72,17 @@ const App = (): JSX.Element => {
     loading,
     setLoading,
   };
+
+  if (global.__fbBatchedBridge) {
+    const origMessageQueue = global.__fbBatchedBridge;
+    const modules = origMessageQueue._remoteModuleTable;
+    const methods = origMessageQueue._remoteMethodTable;
+    global.findModuleByModuleAndMethodIds = (moduleId, methodId) => {
+      console.log(
+        `The problematic line code is in: ${modules[moduleId]}.${methods[moduleId][methodId]}`,
+      );
+    };
+  }
 
   return (
     <GestureHandlerRootView>

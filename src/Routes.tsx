@@ -8,6 +8,8 @@ import HomeScreen from './HomeScreen';
 import CreateTodo from './pages/CreateTodo';
 import Header from './components/Header';
 import notifee, {EventType} from '@notifee/react-native';
+import {RealmProvider} from '@realm/react';
+import {Task} from './models/task';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,27 +48,29 @@ function Routes() {
   }, []);
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          header: ({navigation, route, options}) => {
-            const title =
-              options.headerTitle !== undefined
-                ? options.headerTitle
-                : route.name;
-            return <Header title={title} />;
-          },
-        }}>
-        <Stack.Screen
-          name="Home"
-          options={{headerTitle: 'My Todos'}}
-          component={HomeScreen}
-        />
-        <Stack.Screen
-          name="CreateTodo"
-          options={{headerTitle: 'Add Task Details'}}
-          component={CreateTodo}
-        />
-      </Stack.Navigator>
+      <RealmProvider schema={[Task]}>
+        <Stack.Navigator
+          screenOptions={{
+            header: ({navigation, route, options}) => {
+              const title =
+                options.headerTitle !== undefined
+                  ? options.headerTitle
+                  : route.name;
+              return <Header title={title} />;
+            },
+          }}>
+          <Stack.Screen
+            name="Home"
+            options={{headerTitle: 'My Todos'}}
+            component={HomeScreen}
+          />
+          <Stack.Screen
+            name="CreateTodo"
+            options={{headerTitle: 'Add Task Details'}}
+            component={CreateTodo}
+          />
+        </Stack.Navigator>
+      </RealmProvider>
     </NavigationContainer>
   );
 }

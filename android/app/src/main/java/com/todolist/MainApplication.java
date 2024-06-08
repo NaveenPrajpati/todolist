@@ -1,4 +1,4 @@
-package com.todolist;
+package com.todotasks;
 
 
 import android.app.Application;
