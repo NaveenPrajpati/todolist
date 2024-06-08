@@ -1,4 +1,10 @@
-import React, {createContext, useState, ReactNode} from 'react';
+import React, {
+  createContext,
+  useState,
+  ReactNode,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import Routes from './src/Routes';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
 import SpInAppUpdates, {
@@ -10,15 +16,15 @@ import SpInAppUpdates, {
 // Define the type for the context values
 interface MyContextType {
   deviceId: string;
-  setDeviceId: (id: string) => void;
+  setDeviceId: Dispatch<SetStateAction<string>>;
   loading: boolean;
-  setLoading: (id: boolean) => void;
+  setLoading: Dispatch<SetStateAction<boolean>>;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   filterQuery: string;
   setFilterQuery: (query: string) => void;
-  selectedItems: string[];
-  setSelectedItems: (items: string[]) => void;
+  selectedItems: Set<string>;
+  setSelectedItems: React.Dispatch<React.SetStateAction<Set<string>>>;
   todos: TodoItem[];
   setTodos: (items: TodoItem[]) => void;
 }
@@ -40,7 +46,7 @@ const defaultContextValue: MyContextType = {
   setSearchQuery: () => {},
   filterQuery: '',
   setFilterQuery: () => {},
-  selectedItems: [],
+  selectedItems: new Set(),
   setSelectedItems: () => {},
   todos: [],
   setTodos: () => {},
@@ -48,13 +54,13 @@ const defaultContextValue: MyContextType = {
   setLoading: () => {},
 };
 
-export const MyContext = createContext<MyContextType>(defaultContextValue);
+export const MyContext = createContext<MyContextType | undefined>(undefined);
 
 const App = (): JSX.Element => {
   const [deviceId, setDeviceId] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterQuery, setFilterQuery] = useState('');
-  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 

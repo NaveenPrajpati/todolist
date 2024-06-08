@@ -51,6 +51,7 @@ const HomeScreen = (): JSX.Element => {
   const textRef = useRef<TextInput>(null);
   const [name, setName] = useState('');
   const [listenModal, setListenModal] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
 
   const {
     deviceId,
@@ -190,7 +191,7 @@ const HomeScreen = (): JSX.Element => {
   useEffect(() => {
     if (!deviceId) return;
 
-    console.log(JSON.stringify(todos, null, 2));
+    // console.log(JSON.stringify(todos, null, 2));
     // setTodos(taskList);
 
     // fetchData();
@@ -247,7 +248,16 @@ const HomeScreen = (): JSX.Element => {
     });
   };
 
-  console.log(selectedItems);
+  const iterator = selectedItems.values(); // Get the set's iterator
+  const firstItem = iterator.next().value;
+
+  console.log('stringid', typeof firstItem, firstItem);
+  const objId = new Realm.BSON.ObjectId(firstItem);
+  // const objId = new Object(firstItem);
+  console.log('ob-', objId);
+  console.log('first-', typeof objId);
+
+  // console.log(selectedItems);
 
   return (
     <Container>
@@ -256,22 +266,35 @@ const HomeScreen = (): JSX.Element => {
         renderItem={({item, index}) => (
           <Card
             item={item}
-            isSelected={selectedItems.has(item._id)}
-            selectedItems={selectedItems}
-            onLongPress={() => {}}
-            onSelectPress={() => {
+            isSelected={selectedItems.has(item._id.toString())}
+            onLongPress={() => {
+              setIsSelectionMode(true);
               setSelectedItems(prevSelectedItems => {
                 const updatedItems = new Set(prevSelectedItems);
                 if (updatedItems.has(item._id)) {
                   updatedItems.delete(item._id);
                 } else {
-                  updatedItems.add(item._id);
+                  updatedItems.add(item._id.toString());
                 }
                 return updatedItems;
               });
             }}
             onPress={() => {
-              navigation.navigate('CreateTodo', {isEdit: true, item});
+              if (isSelectionMode) {
+                console.log(typeof item._id.toString());
+                setSelectedItems(prevSelectedItems => {
+                  const updatedItems = new Set(prevSelectedItems);
+                  if (updatedItems.has(item._id)) {
+                    updatedItems.delete(item._id);
+                  } else {
+                    updatedItems.add(item._id.toString());
+                  }
+                  return updatedItems;
+                });
+                setIsSelectionMode(selectedItems.size > 0);
+              } else {
+                navigation.navigate('CreateTodo', {isEdit: true, item});
+              }
             }}
             onCheckPress={() => {
               updateTask(realm, item._id, {completed: !item.completed});

@@ -48,7 +48,7 @@ const readTasks = (realm: {objects: (arg0: string) => any}) => {
 const updateTask = (
   realm: Realm,
   taskId: ObjectId,
-  updatedData: {[x: string]: unknown; completed?: boolean},
+  updatedData: taskdata,
   cb: () => void,
 ) => {
   try {
@@ -67,13 +67,20 @@ const updateTask = (
   }
 };
 
-const deleteTask = (realm: Realm, taskId: any) => {
+const deleteTask = (realm: Realm, taskIds) => {
+  const idsArray = Array.from(taskIds);
   realm.write(() => {
-    let task = realm.objectForPrimaryKey('Task', taskId);
-    if (task) {
-      realm.delete(task);
-    }
+    idsArray.forEach(id => {
+      const objId = new Realm.BSON.ObjectId(id);
+      console.log(objId);
+      const itemToDelete = realm.objectForPrimaryKey('Task', objId);
+      if (itemToDelete) {
+        realm.delete(itemToDelete);
+      }
+    });
   });
+
+  console.log('Items deleted from Realm');
 };
 
 export {createTask, readTasks, updateTask, deleteTask};

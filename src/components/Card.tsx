@@ -19,8 +19,6 @@ const Card = ({
   isSelected,
   onLongPress,
   onSelectPress,
-  selectedItems,
-  onEditPress,
 }) => {
   function formatedDate(time) {
     // Initialize today's start and tomorrow's start
@@ -72,7 +70,7 @@ const Card = ({
 
   // Compute the item's specific styles
   const itemStyle = computeItemStyle(item);
-
+  console.log('ob-', typeof item._id);
   return (
     <TouchableOpacity
       onLongPress={onLongPress}

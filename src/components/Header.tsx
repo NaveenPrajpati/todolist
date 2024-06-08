@@ -18,7 +18,8 @@ import {useNetInfo} from '@react-native-community/netinfo';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useFetchTodos from '../hook/useFecthTodos';
 import {deleteTask} from '../services/CRUD';
-import {useRealm} from '@realm/react';
+import {useQuery, useRealm} from '@realm/react';
+import {Task} from '../models/task';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
@@ -29,13 +30,14 @@ const Header = ({title}) => {
     setSearchQuery,
     selectedItems,
     setSelectedItems,
-    todos,
+
     deviceId,
     setTodos,
     setLoading,
   } = useContext(MyContext);
 
   const realm = useRealm();
+  const todos = useQuery(Task);
 
   const onBackPress = () => {
     navigation.goBack();
@@ -95,10 +97,11 @@ const Header = ({title}) => {
               size={20}
               color="red"
               onPress={() => {
-                removeTodo(selectedItems, () => {
-                  console.log('todo deleted');
-                  setSelectedItems([]);
-                });
+                // removeTodo(selectedItems, () => {
+                //   console.log('todo deleted');
+                //   setSelectedItems([]);
+                // });
+                deleteTask(realm, selectedItems);
               }}
             />
             {selectedItems.size > 0 && (
@@ -112,7 +115,7 @@ const Header = ({title}) => {
                     if (todos.length === prevSelectedItems.size) {
                       return new Set(); // Clear selection if all are selected
                     } else {
-                      return new Set(todos.map(todo => todo._id)); // Select all todo IDs
+                      return new Set(todos.map(todo => todo._id.toString())); // Select all todo IDs
                     }
                   });
                 }}
