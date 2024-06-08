@@ -48,16 +48,23 @@ const readTasks = (realm: {objects: (arg0: string) => any}) => {
 const updateTask = (
   realm: Realm,
   taskId: ObjectId,
-  updatedData: {[x: string]: any; completed?: boolean},
+  updatedData: {[x: string]: unknown; completed?: boolean},
+  cb: () => void,
 ) => {
-  realm.write(() => {
-    let task = realm.objectForPrimaryKey('Task', taskId);
-    if (task) {
-      Object.keys(updatedData).forEach(key => {
-        task[key] = updatedData[key];
-      });
-    }
-  });
+  try {
+    realm.write(() => {
+      let task = realm.objectForPrimaryKey('Task', taskId);
+      if (task) {
+        Object.keys(updatedData).forEach(key => {
+          task[key] = updatedData[key];
+        });
+      }
+    });
+    cb();
+  } catch (error) {
+    console.log('error in updating data');
+    cb();
+  }
 };
 
 const deleteTask = (realm: Realm, taskId: any) => {

@@ -21,7 +21,7 @@ import {addList, getList} from '../services/lists';
 import moment from 'moment';
 import {addData, editTodo} from '../services/todos';
 import DatePicker from 'react-native-date-picker';
-import {createTask} from '../services/CRUD';
+import {createTask, updateTask} from '../services/CRUD';
 import {useQuery, useRealm} from '@realm/react';
 import {Task} from '../models/task';
 
@@ -40,7 +40,7 @@ const CreateTodo = ({navigation, route}) => {
   );
   const [descriptionValue, setDescriptionValue] = useState('');
   const [dueDate, setDueDate] = useState(
-    isEdit ? moment.unix(item.dueDate).toISOString() : '',
+    isEdit && item?.dueDate ? moment.unix(item.dueDate).toISOString() : '',
   );
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
@@ -63,6 +63,7 @@ const CreateTodo = ({navigation, route}) => {
     setData('');
     setDueDate('');
     setCategory('');
+    setDatePickerVisibility(false);
   }
 
   const addDataTodo = async () => {
@@ -97,10 +98,22 @@ const CreateTodo = ({navigation, route}) => {
   // }, []);
 
   function updateData(id) {
-    editTodo({id, data, deviceId, list, descriptions, dueDate}, () => {
-      resetData();
-      navigation.goBack();
-    });
+    updateTask(
+      realm,
+      item._id,
+      {
+        name: data,
+        descriptions,
+        deviceId,
+        category,
+        dueDate,
+        completed: false,
+      },
+      () => {
+        resetData();
+        navigation.goBack();
+      },
+    );
   }
 
   return (
