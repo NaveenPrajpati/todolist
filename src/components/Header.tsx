@@ -97,11 +97,9 @@ const Header = ({title}) => {
               size={20}
               color="red"
               onPress={() => {
-                // removeTodo(selectedItems, () => {
-                //   console.log('todo deleted');
-                //   setSelectedItems([]);
-                // });
-                deleteTask(realm, selectedItems);
+                deleteTask(realm, selectedItems, () => {
+                  setSelectedItems(new Set());
+                });
               }}
             />
             {selectedItems.size > 0 && (

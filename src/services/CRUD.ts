@@ -67,20 +67,24 @@ const updateTask = (
   }
 };
 
-const deleteTask = (realm: Realm, taskIds) => {
+const deleteTask = (realm: Realm, taskIds, cb) => {
   const idsArray = Array.from(taskIds);
-  realm.write(() => {
-    idsArray.forEach(id => {
-      const objId = new Realm.BSON.ObjectId(id);
-      console.log(objId);
-      const itemToDelete = realm.objectForPrimaryKey('Task', objId);
-      if (itemToDelete) {
-        realm.delete(itemToDelete);
-      }
+  try {
+    realm.write(() => {
+      idsArray.forEach(id => {
+        const objId = new BSON.ObjectId(id);
+        const itemToDelete = realm.objectForPrimaryKey('Task', objId);
+        if (itemToDelete) {
+          realm.delete(itemToDelete);
+        }
+      });
     });
-  });
-
-  console.log('Items deleted from Realm');
+    console.log('Items deleted from Realm');
+    cb();
+  } catch (error) {
+    console.log('problem in deleting ');
+    cb();
+  }
 };
 
 export {createTask, readTasks, updateTask, deleteTask};

@@ -16,7 +16,12 @@ import {colors} from '../utils/styles';
 import VectorIcon from '../components/VectorIcon';
 import SelectTag from '../components/Dropdown';
 import {MyContext} from '../../App';
-import {formatDateTime, selectData, toast} from '../utils/utilityFunctions';
+import {
+  formatDateTime,
+  formatedDate,
+  selectData,
+  toast,
+} from '../utils/utilityFunctions';
 import {addList, getList} from '../services/lists';
 import moment from 'moment';
 import {addData, editTodo} from '../services/todos';
@@ -40,7 +45,7 @@ const CreateTodo = ({navigation, route}) => {
   );
   const [descriptionValue, setDescriptionValue] = useState('');
   const [dueDate, setDueDate] = useState(
-    isEdit && item?.dueDate ? moment.unix(item.dueDate).toISOString() : '',
+    isEdit ? moment.unix(item.dueDate).toISOString() : '',
   );
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const {deviceId, setDeviceId} = useContext(MyContext);
@@ -51,8 +56,10 @@ const CreateTodo = ({navigation, route}) => {
   const taskList = useQuery(Task);
 
   const handleDateChange = (date: Date) => {
-    console.log(date);
-    setDueDate(date);
+    const da = new Date(date);
+    const timestamp = da.getTime() / 1000;
+    console.log(timestamp);
+    setDueDate(timestamp);
 
     setDatePickerVisibility(false);
   };
@@ -67,11 +74,6 @@ const CreateTodo = ({navigation, route}) => {
   }
 
   const addDataTodo = async () => {
-    // addData({data, descriptions, deviceId, list, dueDate}, () => {
-    //   resetData();
-    //   navigation.goBack();
-    // });
-
     createTask(
       realm,
       {
@@ -83,6 +85,8 @@ const CreateTodo = ({navigation, route}) => {
         completed: false,
       },
       () => {
+        navigation.goBack();
+
         resetData();
       },
     );
@@ -343,7 +347,7 @@ const CreateTodo = ({navigation, route}) => {
                   backgroundColor: 'orange',
                   padding: 2,
                 }}>
-                {formatDateTime(dueDate)}
+                {formatedDate(dueDate)}
               </Text>
             </View>
           </>

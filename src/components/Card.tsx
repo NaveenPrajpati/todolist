@@ -5,11 +5,15 @@ import moment from 'moment';
 import {toggleCompletion} from '../services/todos';
 import {colors, screenW} from '../utils/styles';
 import notifee, {TimestampTrigger, TriggerType} from '@notifee/react-native';
+import {formatedDate} from '../utils/utilityFunctions';
 
-interface FormatDateTimeProps {
-  dateTimeString: string;
+interface CardProps {
+  item: any; // Use a more specific type if possible
   onCheckPress: () => void;
   onPress: () => void;
+  isSelected: boolean;
+  onLongPress: () => void;
+  onSelectPress: () => void;
 }
 
 const Card = ({
@@ -19,39 +23,14 @@ const Card = ({
   isSelected,
   onLongPress,
   onSelectPress,
-}) => {
-  function formatedDate(time) {
-    // Initialize today's start and tomorrow's start
-    const today = moment().startOf('day');
-    const tomorrow = moment().add(1, 'days').startOf('day');
-
-    // Convert the UNIX timestamp to a Moment object  or Convert the ISO 8601 date string to a Moment object
-    const date = time.seconds ? moment.unix(time.seconds) : moment(time);
-
-    // Check if the date is today
-    if (date.isSame(today, 'day')) {
-      return date.format('hh:mm A');
-    }
-    // Check if the date is tomorrow
-    else if (date.isSame(tomorrow, 'day')) {
-      return 'tom'; // Return "tom" for tomorrow
-    }
-    // Return a full date and time format otherwise
-    else {
-      return date.format('ddd, DD MMM hh:mm A'); // Example: "Sun, 05 May 04:30 PM"
-    }
-  }
-
-  const computeItemStyle = (item: {dueDate?: {seconds: number} | null}) => {
-    // Check if there's no due date
-    if (!item.dueDate) {
+}: CardProps) => {
+  const computeItemStyle = item => {
+    if (!item.dueDate || item.dueDate === '') {
       return {borderLeftColor: 'gray', marginLeft: 20};
     }
 
-    // Check if the due date is past
-    const isPastDue = item.dueDate.seconds < new Date().getTime() / 1000;
+    const isPastDue = item.dueDate < new Date().getTime() / 1000;
 
-    // Apply appropriate styles based on conditions
     if (isPastDue) {
       return {
         borderLeftColor: 'red',
@@ -66,11 +45,13 @@ const Card = ({
   };
 
   // Check if the item is past due (for opacity and background color)
-  const isPastDue = item.dueDate?.seconds < new Date().getTime() / 1000;
+  const isPastDue =
+    item.dueDate &&
+    item.dueDate !== '' &&
+    item.dueDate < new Date().getTime() / 1000;
 
   // Compute the item's specific styles
   const itemStyle = computeItemStyle(item);
-  console.log('ob-', typeof item._id);
   return (
     <TouchableOpacity
       onLongPress={onLongPress}

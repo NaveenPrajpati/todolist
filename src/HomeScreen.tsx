@@ -248,16 +248,7 @@ const HomeScreen = (): JSX.Element => {
     });
   };
 
-  const iterator = selectedItems.values(); // Get the set's iterator
-  const firstItem = iterator.next().value;
-
-  console.log('stringid', typeof firstItem, firstItem);
-  const objId = new Realm.BSON.ObjectId(firstItem);
-  // const objId = new Object(firstItem);
-  console.log('ob-', objId);
-  console.log('first-', typeof objId);
-
-  // console.log(selectedItems);
+  console.log('tt-', JSON.stringify(todos, null, 2));
 
   return (
     <Container>
