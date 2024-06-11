@@ -1,7 +1,7 @@
 // In App.js in a new project
 
-import React, {useEffect} from 'react';
-import {View, Text} from 'react-native';
+import React, {useContext, useEffect} from 'react';
+import {View, Text, DrawerLayoutAndroid} from 'react-native';
 import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from './HomeScreen';
@@ -10,10 +10,15 @@ import Header from './components/Header';
 import notifee, {EventType} from '@notifee/react-native';
 import {RealmProvider} from '@realm/react';
 import {Task} from './models/task';
+import {MyContext} from '../App';
+import Drawer from './components/Drawer';
+import SettingsPage from './pages/SettingsPage';
 
 const Stack = createNativeStackNavigator();
 
 function Routes() {
+  const {drawer} = useContext(MyContext);
+
   // React.useEffect(() => {
   //   return notifee.onForegroundEvent(({type, detail}) => {
   //     switch (type) {
@@ -49,27 +54,37 @@ function Routes() {
   return (
     <NavigationContainer>
       <RealmProvider schema={[Task]}>
-        <Stack.Navigator
-          screenOptions={{
-            header: ({navigation, route, options}) => {
-              const title =
-                options.headerTitle !== undefined
-                  ? options.headerTitle
-                  : route.name;
-              return <Header title={title} />;
-            },
-          }}>
-          <Stack.Screen
-            name="Home"
-            options={{headerTitle: 'My Todos'}}
-            component={HomeScreen}
-          />
-          <Stack.Screen
-            name="CreateTodo"
-            options={{headerTitle: 'Add Task Details'}}
-            component={CreateTodo}
-          />
-        </Stack.Navigator>
+        <DrawerLayoutAndroid
+          ref={drawer}
+          drawerWidth={200}
+          renderNavigationView={Drawer}>
+          <Stack.Navigator
+            screenOptions={{
+              header: ({navigation, route, options}) => {
+                const title =
+                  options.headerTitle !== undefined
+                    ? options.headerTitle
+                    : route.name;
+                return <Header title={title} />;
+              },
+            }}>
+            <Stack.Screen
+              name="Home"
+              options={{headerTitle: ''}}
+              component={HomeScreen}
+            />
+            <Stack.Screen
+              name="CreateTodo"
+              options={{headerTitle: 'Add Task Details'}}
+              component={CreateTodo}
+            />
+            <Stack.Screen
+              name="SettingsPage"
+              options={{headerTitle: 'Settings'}}
+              component={SettingsPage}
+            />
+          </Stack.Navigator>
+        </DrawerLayoutAndroid>
       </RealmProvider>
     </NavigationContainer>
   );

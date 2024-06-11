@@ -1,5 +1,5 @@
 import React, {FC, ReactNode, useState} from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {StyleProp, StyleSheet, Text, View, ViewStyle} from 'react-native';
 import {Dropdown} from 'react-native-element-dropdown';
 import VectorIcon from './VectorIcon';
 import {colors} from '../utils/styles';
@@ -10,6 +10,7 @@ interface SelectTagProps {
   onChange: () => void;
   renderLeftIcon: () => ReactNode;
   value: string;
+  containerStyle: StyleProp<ViewStyle>;
 }
 
 const SelectTag: FC<SelectTagProps> = ({
@@ -17,13 +18,18 @@ const SelectTag: FC<SelectTagProps> = ({
   value,
   onChange,
   renderLeftIcon,
+  containerStyle,
 }) => {
   const [isFocus, setIsFocus] = useState(false);
 
   return (
     <View style={styles.container}>
       <Dropdown
-        style={[styles.dropdown, isFocus && {borderColor: 'blue'}]}
+        style={[
+          styles.dropdown,
+          containerStyle,
+          isFocus && {borderColor: 'blue'},
+        ]}
         placeholderStyle={styles.placeholderStyle}
         selectedTextStyle={styles.selectedTextStyle}
         inputSearchStyle={styles.inputSearchStyle}

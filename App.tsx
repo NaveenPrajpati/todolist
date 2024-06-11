@@ -4,6 +4,8 @@ import React, {
   ReactNode,
   Dispatch,
   SetStateAction,
+  useRef,
+  RefObject,
 } from 'react';
 import Routes from './src/Routes';
 import {GestureHandlerRootView} from 'react-native-gesture-handler';
@@ -12,6 +14,7 @@ import SpInAppUpdates, {
   IAUUpdateKind,
   StartUpdateOptions,
 } from 'sp-react-native-in-app-updates';
+import {DrawerLayoutAndroid} from 'react-native';
 
 // Define the type for the context values
 interface MyContextType {
@@ -27,6 +30,7 @@ interface MyContextType {
   setSelectedItems: React.Dispatch<React.SetStateAction<Set<string>>>;
   todos: TodoItem[];
   setTodos: (items: TodoItem[]) => void;
+  drawer: RefObject<DrawerLayoutAndroid | null>;
 }
 
 interface TodoItem {
@@ -52,6 +56,7 @@ const defaultContextValue: MyContextType = {
   setTodos: () => {},
   loading: false,
   setLoading: () => {},
+  drawer: null,
 };
 
 export const MyContext = createContext<MyContextType | undefined>(undefined);
@@ -63,6 +68,7 @@ const App = (): JSX.Element => {
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [todos, setTodos] = useState<TodoItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const drawer = useRef<DrawerLayoutAndroid>(null);
 
   const values: MyContextType = {
     deviceId,
@@ -77,6 +83,7 @@ const App = (): JSX.Element => {
     setTodos,
     loading,
     setLoading,
+    drawer,
   };
 
   if (global.__fbBatchedBridge) {

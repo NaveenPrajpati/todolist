@@ -20,6 +20,8 @@ import useFetchTodos from '../hook/useFecthTodos';
 import {deleteTask} from '../services/CRUD';
 import {useQuery, useRealm} from '@realm/react';
 import {Task} from '../models/task';
+import SelectTag from './Dropdown';
+import {filterData, selectData} from '../utils/utilityFunctions';
 
 const Header = ({title}) => {
   const navigation = useNavigation();
@@ -30,7 +32,7 @@ const Header = ({title}) => {
     setSearchQuery,
     selectedItems,
     setSelectedItems,
-
+    drawer,
     deviceId,
     setTodos,
     setLoading,
@@ -57,15 +59,19 @@ const Header = ({title}) => {
     checkLocalData();
   }, []);
 
-  const handleDeleteTask = taskId => {
-    deleteTask(realm, taskId);
+  const handleDeleteTask = () => {
+    deleteTask(realm, selectedItems, () => {
+      setSelectedItems(new Set());
+    });
   };
+
+  const [list, setList] = useState('');
 
   const showBackButton = state.index > 0;
   return (
     <View style={styles.container}>
       <View style={{flexDirection: 'row', alignItems: 'center', gap: 10}}>
-        {showBackButton && (
+        {showBackButton ? (
           <TouchableOpacity onPress={onBackPress} style={styles.backButton}>
             <VectorIcon
               iconName="arrowleft"
@@ -74,8 +80,29 @@ const Header = ({title}) => {
               style={styles.backText}
             />
           </TouchableOpacity>
+        ) : (
+          <VectorIcon
+            iconName="menu"
+            iconPack="MaterialCommunityIcons"
+            size={22}
+            color="white"
+            onPress={() => drawer.current?.openDrawer()}
+          />
         )}
-        <Text style={styles.text}>{title}</Text>
+        {!title ? (
+          <SelectTag
+            data={filterData}
+            onChange={({value}) => {
+              console.log(value);
+              setList(value);
+            }}
+            renderLeftIcon={() => null}
+            value={list}
+            containerStyle={{width: 150}}
+          />
+        ) : (
+          <Text style={styles.text}>{title}</Text>
+        )}
         {showSearch && (
           <TextInput
             placeholder="Search here"
@@ -96,11 +123,7 @@ const Header = ({title}) => {
               iconPack="AntDesign"
               size={20}
               color="red"
-              onPress={() => {
-                deleteTask(realm, selectedItems, () => {
-                  setSelectedItems(new Set());
-                });
-              }}
+              onPress={handleDeleteTask}
             />
             {selectedItems.size > 0 && (
               <VectorIcon
@@ -128,7 +151,7 @@ const Header = ({title}) => {
           color="white"
           onPress={() => setShowSearch(pre => !pre)}
         />
-        {isConnected && hasLocalData && (
+        {/* {isConnected && hasLocalData && (
           <Pressable onPress={() => {}}>
             <VectorIcon
               iconName="web-sync"
@@ -144,7 +167,7 @@ const Header = ({title}) => {
               }}
             />
           </Pressable>
-        )}
+        )} */}
         <FilterMenu />
       </View>
     </View>

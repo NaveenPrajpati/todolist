@@ -38,7 +38,7 @@ const Card = ({
       };
     } else {
       return {
-        borderLeftColor: 'cyan',
+        borderLeftColor: 'deepskyblue',
         marginLeft: 40,
       };
     }
@@ -60,18 +60,13 @@ const Card = ({
         styles.container,
         itemStyle,
         {
-          opacity: isPastDue ? 0.5 : 1,
-          backgroundColor: isPastDue ? 'red' : colors.cardbg,
+          opacity: isPastDue ? 0.8 : 1,
+          // backgroundColor: isPastDue ? 'red' : colors.cardbg,
         },
         {width: item.completed ? '88%' : '70%'},
       ]}>
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'space-between',
-          gap: 10,
-        }}>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 5}}>
+      <View style={styles.header}>
+        <View style={styles.iconTextContainer}>
           <VectorIcon
             iconName={
               isSelected ? 'radio-button-checked' : 'radio-button-unchecked'
@@ -93,34 +88,32 @@ const Card = ({
           onPress={onCheckPress}
         />
       </View>
-      <Text style={styles.currentValue}>{item.name}</Text>
+      <View style={{marginLeft: 5}}>
+        <Text style={styles.currentValue}>{item.name}</Text>
 
-      {item?.descriptions.length != 0 && (
-        <View style={{marginLeft: 20}}>
-          {item?.descriptions?.map((it, index) => (
-            <Text key={index} style={styles.target}>
-              {index + 1}
-              {')'} {it}
-            </Text>
-          ))}
-        </View>
-      )}
-      {/* <View style={styles.divider}></View> */}
-      <View
-        style={{
-          flexDirection: 'row',
-          justifyContent: 'flex-end',
-          marginTop: 20,
-          borderRadius: 5,
-        }}>
-        {/* <VectorIcon
-          iconName={'pencil'}
-          size={20}
-          color="white"
-          onPress={onEditPress}
-        /> */}
+        {item?.descriptions.length != 0 && (
+          <>
+            {item?.descriptions?.map((it: string, index: number) => (
+              <Text key={index} style={styles.target}>
+                {/* {index + 1} */}
+                {'-'} {it}
+              </Text>
+            ))}
+          </>
+        )}
+      </View>
+      <View style={styles.footer}>
+        {item?.category && (
+          <Text style={{color: 'white', fontSize: 18}}>{item.category}</Text>
+        )}
         {item.dueDate && (
-          <Text style={[styles.target, {color: isPastDue ? 'red' : 'cyan'}]}>
+          <Text
+            style={[styles.target, {color: isPastDue ? 'red' : 'deepskyblue'}]}>
+            <VectorIcon
+              iconName="bell"
+              color="white"
+              style={{marginRight: 2}}
+            />
             {formatedDate(item.dueDate)}
           </Text>
         )}
@@ -140,17 +133,25 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: 'red',
     marginVertical: 5,
+
+    elevation: 4,
+    shadowColor: 'red',
   },
-  section: {
-    // flex: 2,
-    // alignItems: 'flex-start',
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  iconTextContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
   },
   currentValue: {
     color: 'violet',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 4,
-    marginLeft: 10,
   },
   target: {
     color: '#999999', // lighter grey for the target
@@ -160,6 +161,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#999999', // grey divider
     width: 1, // make the divider thinner
     height: '80%', // adjust the height to match the design
+  },
+  descriptions: {
+    marginLeft: 20,
+  },
+  footer: {
+    alignItems: 'flex-end',
+    borderRadius: 5,
   },
 });
 

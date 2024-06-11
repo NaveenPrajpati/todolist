@@ -11,6 +11,12 @@ export const selectData = [
   {label: 'Wishlist', value: 'wishlist'},
   {label: 'Work', value: 'work'},
 ];
+export const filterData = [
+  {label: 'OverDue', value: 'overDue'},
+  {label: 'Completed', value: 'completed'},
+  {label: 'Latest', value: 'latest'},
+  {label: 'Oldest', value: 'oldest'},
+];
 
 export function formatedDate(time: string | number) {
   const today = moment().startOf('day');

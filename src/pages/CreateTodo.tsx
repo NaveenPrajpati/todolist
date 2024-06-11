@@ -16,15 +16,9 @@ import {colors} from '../utils/styles';
 import VectorIcon from '../components/VectorIcon';
 import SelectTag from '../components/Dropdown';
 import {MyContext} from '../../App';
-import {
-  formatDateTime,
-  formatedDate,
-  selectData,
-  toast,
-} from '../utils/utilityFunctions';
+import {formatedDate, selectData} from '../utils/utilityFunctions';
 import {addList, getList} from '../services/lists';
 import moment from 'moment';
-import {addData, editTodo} from '../services/todos';
 import DatePicker from 'react-native-date-picker';
 import {createTask, updateTask} from '../services/CRUD';
 import {useQuery, useRealm} from '@realm/react';
@@ -58,7 +52,6 @@ const CreateTodo = ({navigation, route}) => {
   const handleDateChange = (date: Date) => {
     const da = new Date(date);
     const timestamp = da.getTime() / 1000;
-    console.log(timestamp);
     setDueDate(timestamp);
 
     setDatePickerVisibility(false);

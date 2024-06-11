@@ -9,6 +9,8 @@ import {
   ToastAndroid,
   Text,
   Pressable,
+  Keyboard,
+  DrawerLayoutAndroid,
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import firestore from '@react-native-firebase/firestore';
@@ -31,6 +33,7 @@ import {fetch} from '@react-native-community/netinfo';
 import {useQuery, useRealm} from '@realm/react';
 import {Task} from './models/task';
 import {createTask, updateTask} from './services/CRUD';
+import Drawer from './components/Drawer';
 
 interface TodoItem {
   id: string;
@@ -61,8 +64,10 @@ const HomeScreen = (): JSX.Element => {
     setSelectedItems,
     setTodos,
     filterQuery,
+    drawer,
   } = useContext(MyContext);
 
+  // const drawer = useRef<DrawerLayoutAndroid>(null);
   const navigation = useNavigation();
   const realm = useRealm();
 
@@ -328,7 +333,7 @@ const HomeScreen = (): JSX.Element => {
           />
         </Pressable> */}
         <TextInput
-          placeholder="Add your Task"
+          placeholder="Add Quick Task"
           multiline
           onChangeText={setName}
           value={name}
@@ -349,6 +354,7 @@ const HomeScreen = (): JSX.Element => {
                 },
                 () => {
                   setName('');
+                  Keyboard.dismiss();
                 },
               );
             }}

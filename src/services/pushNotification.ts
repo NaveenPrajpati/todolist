@@ -1,4 +1,5 @@
 import notifee, {TimestampTrigger, TriggerType} from '@notifee/react-native';
+import moment from 'moment';
 
 async function createNotificationChannel() {
   const channelId = 'default';
@@ -17,8 +18,12 @@ async function createNotificationChannel() {
 }
 
 export async function onDisplayNotification(task) {
-  const dueTime = new Date(task.dueDate);
+  // const dueTime = new Date(task.dueDate);
+  const dueTime = moment(task.dueDate * 1000).toDate();
+
   const now = new Date();
+
+  console.log(task.dueDate);
 
   if (dueTime <= now) {
     console.error('Attempted to set a notification for a past time.');

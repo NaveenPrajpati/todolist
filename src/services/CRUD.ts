@@ -1,6 +1,8 @@
 import {Realm, useRealm, useQuery} from '@realm/react';
 import {ObjectId} from 'bson';
 import {BSON} from 'realm';
+import {onDisplayNotification} from './pushNotification';
+import {Keyboard} from 'react-native';
 
 type taskdata = {
   name: any;
@@ -34,6 +36,12 @@ const createTask = (realm: Realm, taskData: taskdata, cb: () => void) => {
         createdAt: Math.round(new Date().getTime() / 1000),
       });
     });
+    if (taskData.dueDate)
+      onDisplayNotification({
+        text: taskData.name,
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : null,
+      });
+    Keyboard.dismiss();
     cb();
   } catch (error) {
     console.log('error occur in adding data');
@@ -60,6 +68,11 @@ const updateTask = (
         });
       }
     });
+    if (updatedData?.dueDate)
+      onDisplayNotification({
+        text: updatedData.name,
+        dueDate: updatedData.dueDate ? new Date(updatedData.dueDate) : null,
+      });
     cb();
   } catch (error) {
     console.log('error in updating data');
@@ -67,7 +80,11 @@ const updateTask = (
   }
 };
 
-const deleteTask = (realm: Realm, taskIds, cb) => {
+const deleteTask = (
+  realm: Realm,
+  taskIds: Iterable<unknown> | ArrayLike<unknown>,
+  cb: {(): void; (): void} | undefined,
+) => {
   const idsArray = Array.from(taskIds);
   try {
     realm.write(() => {
